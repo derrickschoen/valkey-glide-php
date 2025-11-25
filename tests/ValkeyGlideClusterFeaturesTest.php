@@ -4,6 +4,9 @@ defined('VALKEY_GLIDE_PHP_TESTRUN') or die("Use TestValkeyGlide.php to run tests
 
 require_once __DIR__ . "/ValkeyGlideClusterBaseTest.php";
 
+use ValkeyGlide\OpenTelemetry\OpenTelemetryConfig;
+use ValkeyGlide\OpenTelemetry\TracesConfig;
+
 /**
  * ValkeyGlide Cluster Features Test
  * Tests various constructor options and features for ValkeyGlideCluster client
@@ -754,5 +757,276 @@ class ValkeyGlideClusterFeaturesTest extends ValkeyGlideClusterBaseTest
         if ($memoryGrowth > 5 * 1024 * 1024) { // More than 5MB
             echo "WARNING: Significant memory growth detected: " . round($memoryGrowth / 1024 / 1024, 2) . " MB\n";
         }
+    }
+
+    public function testOtelClusterConfiguration()
+    {
+        // Wait for any pending flushes from previous tests to complete
+        usleep(300000); // 300ms
+
+        // Use same file as standalone since OTEL can only be initialized once per process
+        $tracesFile = sys_get_temp_dir() . '/valkey_glide_traces_test.json';
+        
+        // Clean up any existing trace file
+        if (file_exists($tracesFile)) {
+            unlink($tracesFile);
+        }
+
+        // Test with 100% sampling to ensure spans are exported
+        $otelConfig = OpenTelemetryConfig::builder()
+            ->traces(TracesConfig::builder()
+                ->endpoint('file://' . $tracesFile)
+                ->samplePercentage(100)
+                ->build())
+            ->flushIntervalMs(100)
+            ->build();
+
+        // Create cluster client with OpenTelemetry configuration
+        $client = new ValkeyGlideCluster(
+            addresses: [
+                ['host' => 'localhost', 'port' => 7001],
+                ['host' => 'localhost', 'port' => 7002],
+                ['host' => 'localhost', 'port' => 7003]
+            ],
+            use_tls: false,
+            credentials: null,
+            read_from: ValkeyGlide::READ_FROM_PRIMARY,
+            request_timeout: null,
+            reconnect_strategy: null,
+            client_name: 'otel-cluster-test',
+            periodic_checks: null,
+            client_az: null,
+            advanced_config: [
+                'otel' => $otelConfig
+            ]
+        );
+
+        // Ensure 100% sampling (OTEL may already be initialized from previous tests)
+        ValkeyGlide::setOtelSamplePercentage(100);
+
+
+        // Execute commands that should generate spans
+        $client->set('otel:cluster:test', 'value');
+        $value = $client->get('otel:cluster:test');
+        $this->assertEquals('value', $value, "GET should return the set value with OpenTelemetry");
+
+        $deleteResult = $client->del('otel:cluster:test');
+        $this->assertGT(0, $deleteResult, "DEL should delete the key with OpenTelemetry");
+
+        $client->close();
+
+        // Wait for spans to be flushed
+        usleep(500000); // 500ms
+
+        // Verify spans were exported
+        $this->assertTrue(file_exists($tracesFile), "Traces file should exist");
+        $this->assertGT(0, filesize($tracesFile), "Traces file should not be empty");
+
+        // Additional delay to ensure all spans are fully written
+        usleep(200000); // 200ms
+
+        // Read and parse the traces file
+        $tracesContent = file_get_contents($tracesFile);
+        $this->assertGT(0, strlen($tracesContent), "Traces file should have content");
+
+        // Parse JSON lines (each line is a separate JSON object)
+        $lines = explode("\n", trim($tracesContent));
+        $spanNames = [];
+        
+        foreach ($lines as $line) {
+            if (empty($line)) continue;
+            
+            $span = json_decode($line, true);
+            if ($span && isset($span['name'])) {
+                $spanNames[] = $span['name'];
+            }
+        }
+
+        // Verify expected span names are present
+        $this->assertContains('SET', $spanNames, "Should have SET span");
+        $this->assertContains('GET', $spanNames, "Should have GET span");
+        $this->assertContains('DEL', $spanNames, "Should have DEL span");
+
+        // Clean up after assertions
+        if (file_exists($tracesFile)) {
+            unlink($tracesFile);
+        }
+    }
+
+    public function testOtelClusterSamplingPercentage()
+    {
+        // Use same file as standalone since OTEL can only be initialized once per process
+        $tracesFile = sys_get_temp_dir() . '/valkey_glide_traces_sampling_test.json';
+        
+        // Clean up any existing trace file
+        if (file_exists($tracesFile)) {
+            unlink($tracesFile);
+        }
+
+        // Test with 0% sampling - no spans should be exported
+        $otelConfig = OpenTelemetryConfig::builder()
+            ->traces(TracesConfig::builder()
+                ->endpoint('file://' . $tracesFile)
+                ->samplePercentage(0)
+                ->build())
+            ->flushIntervalMs(100)
+            ->build();
+
+        $client = new ValkeyGlideCluster(
+            addresses: [
+                ['host' => 'localhost', 'port' => 7001],
+                ['host' => 'localhost', 'port' => 7002],
+                ['host' => 'localhost', 'port' => 7003]
+            ],
+            use_tls: false,
+            credentials: null,
+            read_from: ValkeyGlide::READ_FROM_PRIMARY,
+            request_timeout: null,
+            reconnect_strategy: null,
+            client_name: 'otel-cluster-sampling-test',
+            periodic_checks: null,
+            client_az: null,
+            advanced_config: [
+                'otel' => $otelConfig
+            ]
+        );
+
+        // Execute commands
+        $client->set('otel:cluster:sampling:test', 'value');
+        $client->get('otel:cluster:sampling:test');
+        $client->del('otel:cluster:sampling:test');
+        $client->close();
+
+        // Wait for potential flush
+        usleep(500000); // 500ms
+
+        // Verify no spans were exported (file should not exist or be empty)
+        if (file_exists($tracesFile)) {
+            $fileSize = filesize($tracesFile);
+            unlink($tracesFile);
+            $this->assertEquals(0, $fileSize, "Traces file should be empty with 0% sampling");
+        }
+    }
+
+    public function testOtelClusterArrayConfigurationRejected()
+    {
+        // Test that array-based OpenTelemetry configuration is rejected for cluster
+        $arrayConfig = [
+            'traces' => [
+                'endpoint' => 'file:///tmp/valkey-cluster-traces.json',
+                'sample_percentage' => 10
+            ],
+            'metrics' => [
+                'endpoint' => 'file:///tmp/valkey-cluster-metrics.json'
+            ]
+        ];
+
+        try {
+            $client = new ValkeyGlideCluster(
+                addresses: [
+                    ['host' => 'localhost', 'port' => 7001],
+                    ['host' => 'localhost', 'port' => 7002],
+                    ['host' => 'localhost', 'port' => 7003]
+                ],
+                use_tls: false,
+                credentials: null,
+                read_from: ValkeyGlide::READ_FROM_PRIMARY,
+                request_timeout: null,
+                reconnect_strategy: null,
+                client_name: 'array-otel-cluster-test',
+                periodic_checks: null,
+                client_az: null,
+                advanced_config: [
+                    'otel' => $arrayConfig
+                ]
+            );
+            
+            $this->fail("Array-based OpenTelemetry configuration should be rejected for cluster");
+        } catch (Exception $e) {
+            // Verify the error message indicates object is required
+            $this->assertStringContains("OpenTelemetryConfig object", $e->getMessage(),
+                "Error should indicate OpenTelemetryConfig object is required");
+        }
+    }
+
+    public function testOtelClusterWithoutConfiguration()
+    {
+        // Test that cluster client works normally without OpenTelemetry configuration
+        $client = new ValkeyGlideCluster(
+            addresses: [
+                ['host' => 'localhost', 'port' => 7001],
+                ['host' => 'localhost', 'port' => 7002],
+                ['host' => 'localhost', 'port' => 7003]
+            ],
+            use_tls: false,
+            credentials: null,
+            read_from: ValkeyGlide::READ_FROM_PRIMARY,
+            request_timeout: null,
+            reconnect_strategy: null,
+            client_name: 'no-otel-cluster-test'
+        );
+
+        // Operations should work normally without OpenTelemetry
+        $client->set('no:otel:cluster:test', 'value');
+        $value = $client->get('no:otel:cluster:test');
+        $this->assertEquals('value', $value, "GET should return the set value");
+
+        $deleteResult = $client->del('no:otel:cluster:test');
+        $this->assertGT(0, $deleteResult, "DEL should delete the key");
+
+        $client->close();
+    }
+
+    public function testOtelClusterDefaultSamplePercentage()
+    {
+        // Test that sample percentage defaults to 1 in PHP builder
+        $tracesConfig = TracesConfig::builder()
+            ->endpoint('file:///tmp/test_cluster_traces.json')
+            ->build();
+
+        // Verify default sample percentage is 1
+        $this->assertEquals(1, $tracesConfig->getSamplePercentage(), 
+            "Sample percentage should default to 1 when not specified");
+    }
+
+    public function testOtelClusterSetSamplePercentage()
+    {
+        // Initialize OTEL by creating a client with OTEL config
+        $tracesFile = sys_get_temp_dir() . '/valkey_glide_traces_test.json';
+        $otelConfig = OpenTelemetryConfig::builder()
+            ->traces(
+                TracesConfig::builder()
+                    ->endpoint('file://' . $tracesFile)
+                    ->samplePercentage(100)
+                    ->build()
+            )
+            ->flushIntervalMs(100)
+            ->build();
+
+        $client = new ValkeyGlideCluster(
+            addresses: [
+                ['host' => 'localhost', 'port' => 7001],
+                ['host' => 'localhost', 'port' => 7002],
+                ['host' => 'localhost', 'port' => 7003]
+            ],
+            use_tls: false,
+            advanced_config: [
+                'otel' => $otelConfig
+            ]
+        );
+        $client->close();
+
+        // Test setting sample percentage to 100%
+        ValkeyGlide::setOtelSamplePercentage(100);
+        $this->assertEquals(100, ValkeyGlide::getOtelSamplePercentage(), "Sample percentage should be 100");
+
+        // Test setting sample percentage to 0%
+        ValkeyGlide::setOtelSamplePercentage(0);
+        $this->assertEquals(0, ValkeyGlide::getOtelSamplePercentage(), "Sample percentage should be 0");
+
+        // Test setting sample percentage to a random value
+        $randomPercentage = rand(1, 99);
+        ValkeyGlide::setOtelSamplePercentage($randomPercentage);
+        $this->assertEquals($randomPercentage, ValkeyGlide::getOtelSamplePercentage(), "Sample percentage should be $randomPercentage");
     }
 }

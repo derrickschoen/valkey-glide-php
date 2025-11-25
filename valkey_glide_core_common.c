@@ -21,6 +21,7 @@
 #include <string.h>
 
 #include "logger.h"
+#include "valkey_glide_otel.h"
 #include "valkey_glide_z_common.h"
 
 /* ====================================================================

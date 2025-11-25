@@ -316,7 +316,17 @@ class ValkeyGlide
      * @param string|null $client_name          Client name identifier.
      * @param string|null $client_az            Client availability zone.
      * @param array|null $advanced_config       Advanced configuration ['connection_timeout' => 5000,
-     *                                          'tls_config' => ['use_insecure_tls' => false]].
+     *                                          'tls_config' => ['use_insecure_tls' => false],
+     *                                          'otel' => OpenTelemetryConfig::builder()
+     *                                                      ->traces(TracesConfig::builder()
+     *                                                        ->endpoint('grpc://localhost:4317')
+     *                                                        ->samplePercentage(1)
+     *                                                        ->build())
+     *                                                      ->metrics(MetricsConfig::builder()
+     *                                                        ->endpoint('grpc://localhost:4317')
+     *                                                        ->build())
+     *                                                      ->flushIntervalMs(5000)
+     *                                                      ->build()].
      *                                          connection_timeout is in milliseconds.
      * @param bool|null $lazy_connect           Whether to use lazy connection.
      */
@@ -527,6 +537,21 @@ class ValkeyGlide
     public function client(string $opt, mixed ...$args): mixed;
 
     public function close(): bool;
+
+    /**
+     * Set the OpenTelemetry sample percentage at runtime.
+     * 
+     * @param int $percentage The sample percentage (0-100)
+     * @throws Exception if OpenTelemetry is not initialized or percentage is invalid
+     */
+    public static function setOtelSamplePercentage(int $percentage): void;
+
+    /**
+     * Get the current OpenTelemetry sample percentage.
+     * 
+     * @return int|null The sample percentage (0-100), or null if not initialized
+     */
+    public static function getOtelSamplePercentage(): ?int;
 
     /**
      * Update the connection password.

@@ -15,6 +15,7 @@
 #include "valkey_glide_commands_common.h"
 #include "valkey_glide_core_common.h"
 #include "valkey_glide_hash_common.h"
+#include "valkey_glide_otel.h"  // Include OTEL support
 
 /* Enum support includes - must be BEFORE arginfo includes */
 #if PHP_VERSION_ID >= 80100
@@ -390,6 +391,32 @@ void valkey_glide_build_client_config_base(valkey_glide_php_common_constructor_p
         } else {
             config->advanced_config->tls_config = NULL;
         }
+
+        /* Check for OTEL config */
+        zval* otel_config_val = zend_hash_str_find(advanced_ht, "otel", sizeof("otel") - 1);
+        if (otel_config_val) {
+            /* Validate that OTEL config is an object, not an array or other type */
+            if (Z_TYPE_P(otel_config_val) != IS_NULL && Z_TYPE_P(otel_config_val) != IS_OBJECT) {
+                VALKEY_LOG_ERROR(
+                    "otel_config",
+                    "OpenTelemetry configuration must be an OpenTelemetryConfig object");
+                zend_throw_exception(
+                    get_exception_ce_for_client_type(is_cluster),
+                    "OpenTelemetry configuration must be an OpenTelemetryConfig object",
+                    0);
+                return;
+            }
+
+            VALKEY_LOG_DEBUG("otel_config", "Processing OTEL configuration from advanced_config");
+            if (!valkey_glide_otel_init(otel_config_val)) {
+                VALKEY_LOG_ERROR("otel_config", "Failed to initialize OTEL");
+                /* Exception already thrown by valkey_glide_otel_init if validation failed */
+                zend_throw_exception(get_exception_ce_for_client_type(is_cluster),
+                                     "Failed to initialize OpenTelemetry",
+                                     0);
+                return;
+            }
+        }
     } else {
         config->advanced_config = NULL;
     }
@@ -453,7 +480,6 @@ PHP_MINIT_FUNCTION(valkey_glide) {
 
     return SUCCESS;
 }
-
 
 zend_module_entry valkey_glide_module_entry = {STANDARD_MODULE_HEADER,
                                                "valkey_glide",
@@ -614,6 +640,26 @@ PHP_METHOD(ValkeyGlide, __destruct) {
 PHP_METHOD(ValkeyGlide, close) {
     /* TODO: Implement ValkeyGlide close */
     RETURN_TRUE;
+}
+
+PHP_METHOD(ValkeyGlide, setOtelSamplePercentage) {
+    zend_long percentage;
+
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+    Z_PARAM_LONG(percentage)
+    ZEND_PARSE_PARAMETERS_END();
+
+    valkey_glide_otel_set_sample_percentage((uint32_t) percentage);
+}
+/* }}} */
+
+PHP_METHOD(ValkeyGlide, getOtelSamplePercentage) {
+    uint32_t percentage;
+
+    if (valkey_glide_otel_get_sample_percentage(&percentage)) {
+        RETURN_LONG((zend_long) percentage);
+    }
+    RETURN_NULL();
 }
 /* }}} */
 

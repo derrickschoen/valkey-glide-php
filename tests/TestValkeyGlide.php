@@ -72,6 +72,10 @@ define('VALKEY_GLIDE_PHP_TESTRUN', true);
 * <http://www.zend.com>.
 */
 
+if (file_exists(__DIR__ . '/../vendor/autoload.php')) {
+    require_once __DIR__ . '/../vendor/autoload.php';
+}
+
 require_once __DIR__ . "/TestSuite.php";
 require_once __DIR__ . "/ConnectionRequestTest.php";
 require_once __DIR__ . "/ValkeyGlideBaseTest.php";
