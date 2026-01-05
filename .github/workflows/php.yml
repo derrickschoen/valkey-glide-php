@@ -136,8 +136,6 @@ jobs:
           composer install --no-interaction --prefer-dist --optimize-autoloader
           echo "Composer install completed. Checking for composer.lock:"
           ls -la composer.lock || echo "Warning: composer.lock not found"
-          echo "Current directory contents:"
-          ls -la
 
       - name: Run PHP Extension Tests
         uses: ./.github/workflows/run-php-tests
@@ -255,9 +253,6 @@ jobs:
           # Ensure Xcode Command Line Tools are installed (required for ASAN)
           xcode-select --install || echo "Xcode Command Line Tools already installed"
 
-      - name: Install protobuf-c
-        run: brew install protobuf-c
-
       - name: Export DYLD_LIBRARY_PATH
         run: echo "DYLD_LIBRARY_PATH=$(brew --prefix protobuf-c)/lib" >> $GITHUB_ENV
 
@@ -274,7 +269,7 @@ jobs:
           # Make scripts executable
           chmod +x start_valkey_with_replicas.sh create-valkey-cluster.sh
 
-          # Start standalone servers (6379, 6380, 6381)
+          # Start standalone servers (6379, 6380, 6381, 6400)
           echo "=== Starting standalone Valkey servers ==="
           ./start_valkey_with_replicas.sh
 
@@ -282,7 +277,7 @@ jobs:
           echo "=== Waiting for standalone servers to start ==="
           sleep 3
 
-          # Start cluster servers (7001-7006)
+          # Start cluster servers (7001-7006, 8001-8006)
           echo "=== Starting Valkey cluster ==="
           ./create-valkey-cluster.sh
 
@@ -488,7 +483,7 @@ jobs:
           # Make scripts executable
           chmod +x start_valkey_with_replicas.sh create-valkey-cluster.sh
 
-          # Start standalone servers (6379, 6380, 6381)
+          # Start standalone servers (6379, 6380, 6381, 6400)
           echo "=== Starting standalone Valkey servers ==="
           ./start_valkey_with_replicas.sh
 
@@ -496,7 +491,7 @@ jobs:
           echo "=== Waiting for standalone servers to start ==="
           sleep 3
 
-          # Start cluster servers (7001-7006)
+          # Start cluster servers (7001-7006, 8001-8006)
           echo "=== Starting Valkey cluster ==="
           ./create-valkey-cluster.sh
 
@@ -991,7 +986,7 @@ jobs:
           which valkey-cli || echo "valkey-cli not found in PATH"
           which redis-cli || echo "redis-cli not found in PATH"
 
-          # Start standalone servers (6379, 6380, 6381)
+          # Start standalone servers (6379, 6380, 6381, 6400)
           echo "=== Starting standalone Valkey servers ==="
           ./start_valkey_with_replicas.sh
 
@@ -1003,7 +998,7 @@ jobs:
           echo "=== Checking standalone server status ==="
           ps aux | grep -E "(valkey|redis)-server" | grep -v grep || echo "No valkey/redis-server processes found"
 
-          # Start cluster servers (7001-7006)
+          # Start cluster servers (7001-7006, 8001-8006)
           echo "=== Starting Valkey cluster ==="
           ./create-valkey-cluster.sh
 
@@ -1053,15 +1048,13 @@ jobs:
 
   test-modules:
     if: ((github.repository_owner == 'valkey-io' && github.event_name == 'workflow_dispatch' && github.event.inputs.run-modules-tests == 'true') || github.event.pull_request.head.repo.owner.login == 'valkey-io')
-    environment: AWS_ACTIONS
     name: Modules Tests
-    runs-on: [self-hosted, linux, ARM64, persistent]
+    runs-on: ubuntu-24.04-arm
     timeout-minutes: 15
     steps:
-      - name: Setup self-hosted runner access
-        run: sudo chown -R $USER:$USER /home/ubuntu/actions-runner/_work/valkey-glide
-
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - uses: Swatinem/rust-cache@v2
         with:
@@ -1070,16 +1063,6 @@ jobs:
             valkey-glide/glide-core
           key: modules-aarch64
 
-      - name: Pre-build Rust components
-        run: |
-          echo "=== Pre-building Rust components for make ==="
-          cd valkey-glide/ffi
-          cargo build --release
-          echo "Rust pre-build completed"
-
-      - name: Install zig
-        uses: ./.github/workflows/install-zig
-
       - name: Build PHP wrapper
         uses: ./.github/workflows/build-php-wrapper
         with:
@@ -1087,6 +1070,50 @@ jobs:
           target: aarch64-unknown-linux-gnu
           php-version: ${{ env.BASE_PHP_VERSION }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          engine-version: "8.0"
+
+      - name: Generate test protobuf PHP classes
+        run: |
+          protoc --proto_path=./valkey-glide/glide-core/src/protobuf --php_out=./tests/ ./valkey-glide/glide-core/src/protobuf/connection_request.proto
+          echo "tests directory contents:"
+          cd tests
+          ls -la
+
+      - name: Install PHP dependencies
+        run: |
+          composer install --no-interaction --prefer-dist --optimize-autoloader
+          echo "Composer install completed. Checking for composer.lock:"
+          ls -la composer.lock || echo "Warning: composer.lock not found"
+
+      - name: Start Valkey servers
+        working-directory: tests
+        run: |
+          set -e  # Exit on any error
+
+          # Ensure /usr/local/bin is in PATH (where valkey-server is installed)
+          export PATH="/usr/local/bin:$PATH"
+
+          echo "=== Starting Valkey servers ==="
+
+          # Make scripts executable
+          chmod +x start_valkey_with_replicas.sh create-valkey-cluster.sh
+
+          # Start standalone servers (6379, 6380, 6381, 6400)
+          echo "=== Starting standalone Valkey servers ==="
+          ./start_valkey_with_replicas.sh
+
+          # Wait a moment for servers to start
+          echo "=== Waiting for standalone servers to start ==="
+          sleep 3
+
+          # Start cluster servers (7001-7006, 8001-8006)
+          echo "=== Starting Valkey cluster ==="
+          ./create-valkey-cluster.sh
+
+          # Final server status check
+          echo "=== Final server status check ==="
+          ps aux | grep -E "(valkey|redis)-server" | grep -v grep || echo "No valkey/redis-server processes found"
+          echo "=== Valkey servers startup completed ==="
 
       - name: Run modules tests
         run: |
