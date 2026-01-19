@@ -839,7 +839,7 @@ class ValkeyGlideCluster
     /**
      * @see ValkeyGlide::psubscribe
      */
-    /* TODO public function psubscribe(array $patterns, callable $callback): void; */
+    public function psubscribe(array $patterns, callable $callback): bool;
 
     /**
      * @see ValkeyGlide::pttl
@@ -849,17 +849,17 @@ class ValkeyGlideCluster
     /**
      * @see ValkeyGlide::publish
      */
-    /* TODO public function publish(string $channel, string $message): ValkeyGlideCluster|bool|int;*/
+    public function publish(string $channel, string $message): int;
 
     /**
      * @see ValkeyGlide::pubsub
      */
-    /* TODO public function pubsub(mixed $route, string ...$values): mixed;*/
+    public function pubsub(string $command, mixed $arg = null): mixed;
 
     /**
      * @see ValkeyGlide::punsubscribe
      */
-    /* TODO public function punsubscribe(string $pattern, string ...$other_patterns): bool|array;*/
+    public function punsubscribe(?array $patterns = null): bool;
 
     /**
      * @see ValkeyGlide::randomkey
@@ -1029,7 +1029,7 @@ class ValkeyGlideCluster
     /**
      * @see ValkeyGlide::subscribe
      */
-   /* TODO  public function subscribe(array $channels, callable $cb): void; */
+    public function subscribe(array $channels, callable $cb): bool;
 
     /**
      * @see ValkeyGlide::sunion()
@@ -1059,7 +1059,7 @@ class ValkeyGlideCluster
     /**
      * @see ValkeyGlide::unsubscribe
      */
-   /* TODO  public function unsubscribe(array $channels): bool|array;*/
+    public function unsubscribe(?array $channels = null): bool;
 
     /**
      * @see ValkeyGlide::unlink

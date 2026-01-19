@@ -73,6 +73,17 @@ if test "$PHP_VALKEY_GLIDE" != "no"; then
     darwin*)
       AC_MSG_CHECKING([for protobuf-c library])
       AC_MSG_RESULT([skipped on macOS - using rpath linking])
+      dnl Still need protobuf-c headers on macOS
+      AC_MSG_CHECKING([for protobuf-c headers])
+      if test -d "/opt/homebrew/include/protobuf-c"; then
+        PHP_ADD_INCLUDE("/opt/homebrew/include")
+        AC_MSG_RESULT([found in /opt/homebrew/include])
+      elif test -d "/usr/local/include/protobuf-c"; then
+        PHP_ADD_INCLUDE("/usr/local/include")
+        AC_MSG_RESULT([found in /usr/local/include])
+      else
+        AC_MSG_ERROR([protobuf-c headers not found. Please install protobuf-c])
+      fi
       ;;
     *)
       AC_MSG_CHECKING([for protobuf-c library])
@@ -86,13 +97,14 @@ if test "$PHP_VALKEY_GLIDE" != "no"; then
   esac
   
   PHP_NEW_EXTENSION(valkey_glide,
-    valkey_glide.c valkey_glide_cluster.c cluster_scan_cursor.c command_response.c logger.c valkey_glide_otel.c valkey_glide_commands.c valkey_glide_commands_2.c valkey_glide_commands_3.c valkey_glide_core_commands.c valkey_glide_core_common.c valkey_glide_expire_commands.c valkey_glide_geo_commands.c valkey_glide_geo_common.c valkey_glide_hash_common.c valkey_glide_list_common.c valkey_glide_s_common.c valkey_glide_str_commands.c valkey_glide_x_commands.c valkey_glide_x_common.c valkey_glide_z.c valkey_glide_z_common.c valkey_z_php_methods.c valkey_glide_script_commands.c valkey_glide_function_commands.c src/command_request.pb-c.c src/connection_request.pb-c.c src/response.pb-c.c src/client_constructor_mock.c,
+    valkey_glide.c valkey_glide_cluster.c valkey_glide_pubsub_common.c valkey_glide_pubsub_introspection.c cluster_scan_cursor.c command_response.c logger.c valkey_glide_otel.c valkey_glide_commands.c valkey_glide_commands_2.c valkey_glide_commands_3.c valkey_glide_core_commands.c valkey_glide_core_common.c valkey_glide_expire_commands.c valkey_glide_geo_commands.c valkey_glide_geo_common.c valkey_glide_hash_common.c valkey_glide_list_common.c valkey_glide_s_common.c valkey_glide_str_commands.c valkey_glide_x_commands.c valkey_glide_x_common.c valkey_glide_z.c valkey_glide_z_common.c valkey_z_php_methods.c valkey_glide_script_commands.c valkey_glide_function_commands.c src/command_request.pb-c.c src/connection_request.pb-c.c src/response.pb-c.c src/client_constructor_mock.c,
     $ext_shared,, $VALKEY_GLIDE_SHARED_LIBADD)
 
   dnl Add FFI library only for macOS (keep Mac working as before)
   case $host_os in
     darwin*)
       VALKEY_GLIDE_SHARED_LIBADD="$VALKEY_GLIDE_SHARED_LIBADD \$(top_builddir)/valkey-glide/ffi/target/release/libglide_ffi.a -lresolv"
+      LDFLAGS="$LDFLAGS -Wl,-undefined,dynamic_lookup"
       ;;
     *)
       dnl Add Rust FFI library linking for Linux (like working commit)

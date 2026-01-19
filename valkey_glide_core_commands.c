@@ -36,6 +36,8 @@
 extern zend_class_entry* ce;
 extern zend_class_entry* get_valkey_glide_exception_ce();
 
+#include "valkey_glide_pubsub_common.h"
+
 /* Import the string conversion functions from command_response.c */
 extern char* long_to_string(long value, size_t* len);
 extern char* double_to_string(double value, size_t* len);
@@ -190,6 +192,13 @@ uint8_t* create_connection_request(size_t*                                   len
         conn_req.client_az = config->client_az;
     }
 
+    /* Enable pubsub infrastructure for dynamic subscriptions */
+    ConnectionRequest__PubSubSubscriptions pubsub_subs =
+        CONNECTION_REQUEST__PUB_SUB_SUBSCRIPTIONS__INIT;
+    pubsub_subs.n_channels_or_patterns_by_type = 0;
+    pubsub_subs.channels_or_patterns_by_type   = NULL;
+    conn_req.pubsub_subscriptions              = &pubsub_subs;
+
     /* Calculate the size of the serialized message */
     *len = connection_request__connection_request__get_packed_size(&conn_req);
 
@@ -224,10 +233,9 @@ static const ConnectionResponse* create_base_glide_client(
     ClientType client_type;
     client_type.tag = SyncClient;
 
-    /* Create the client */
+    /* Create the client with pubsub callback registered at creation time */
     const ConnectionResponse* conn_resp =
-        create_client(request_bytes, len, &client_type, NULL /* No PubSub callback */
-        );
+        create_client(request_bytes, len, &client_type, valkey_glide_pubsub_callback);
 
     /* Free the request bytes as they're no longer needed */
     efree(request_bytes);
