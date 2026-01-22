@@ -1492,4 +1492,37 @@ class ValkeyGlideClusterTest extends ValkeyGlideTest
             }
         }
     }
+
+    public function testPHPRedisClusterAlias()
+    {
+        if (PHP_VERSION_ID < 80300) {
+            $this->markTestSkipped('PHPRedis aliases require PHP 8.3+');
+            return;
+        }
+
+        require_once __DIR__ . "/../phpredis_aliases.php";
+
+        $this->assertTrue(class_exists('RedisCluster'), 'RedisCluster class alias should exist');
+
+        $cluster = new RedisCluster([['host' => '127.0.0.1', 'port' => 7001]]);
+        $this->assertTrue($cluster instanceof RedisCluster, 'Instance should be RedisCluster');
+        $this->assertTrue($cluster instanceof ValkeyGlideCluster, 'Instance should be ValkeyGlideCluster');
+
+        $result = $cluster->set('phpredis_cluster_alias_test', 'value');
+        $this->assertTrue($result);
+
+        $value = $cluster->get('phpredis_cluster_alias_test');
+        $this->assertEquals('value', $value);
+
+        $cluster->del(['phpredis_cluster_alias_test']);
+
+        try {
+            $badCluster = new RedisCluster([['host' => 'localhost', 'port' => 9999]]);
+            $badCluster->ping();
+            $this->fail('Expected RedisException to be thrown');
+        } catch (RedisException $e) {
+            $this->assertTrue($e instanceof RedisException, 'Exception should be RedisException');
+            $this->assertTrue($e instanceof ValkeyGlideException, 'Exception should be ValkeyGlideException');
+        }
+    }
 }
