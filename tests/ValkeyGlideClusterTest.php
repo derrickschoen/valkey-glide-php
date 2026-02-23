@@ -309,7 +309,7 @@ class ValkeyGlideClusterTest extends ValkeyGlideTest
     {
         try {
             return new ValkeyGlideCluster(
-                addresses: [['host' => '127.0.0.1', 'port' => 7001]],
+                addresses: [['host' => self::getClusterHost(), 'port' => self::getClusterPort()]],
                 use_tls: false,
                 credentials: $this->getAuth(),
                 read_from: ValkeyGlide::READ_FROM_PRIMARY,
@@ -448,8 +448,10 @@ class ValkeyGlideClusterTest extends ValkeyGlideTest
         // Test each node entry
         foreach ($allNodesInfo as $index => $nodeInfo) {
             if ($index % 2 == 0) {
-                $this->assertIsInt($nodeInfo['127.0.0.1'], "Port field should be an integer");
-                $nodePort = $nodeInfo['127.0.0.1'];
+                $nodeHost = array_key_first($nodeInfo);
+                $this->assertIsString($nodeHost, "Node host should be a string");
+                $this->assertIsInt($nodeInfo[$nodeHost], "Port field should be an integer");
+                $nodePort = $nodeInfo[$nodeHost];
                 $this->assertFalse(array_key_exists($nodePort, $nodesSeen));
                 $this->assertIsArray($nodeInfo, 1);
                 $nodesSeen[$nodePort] = true;
@@ -472,14 +474,14 @@ class ValkeyGlideClusterTest extends ValkeyGlideTest
         $this->assertArrayKey($keyBasedServerInfo, "redis_version");
 
         // Test 9: routeByAddress routing (specific node)
-        $routeByAddressInfo = $this->valkey_glide->info(['type' => 'routeByAddress', 'host' => '127.0.0.1', 'port' => 7001]);
+        $routeByAddressInfo = $this->valkey_glide->info(['type' => 'routeByAddress', 'host' => self::getClusterHost(), 'port' => self::getClusterPort()]);
         $this->assertIsArray($routeByAddressInfo);
         foreach ($fields as $field) {
             $this->assertArrayKey($routeByAddressInfo, $field);
         }
 
         // Test 10: routeByAddress with specific section
-        $routeByAddressMemoryInfo = $this->valkey_glide->info(['type' => 'routeByAddress', 'host' => '127.0.0.1', 'port' => 7001], "memory");
+        $routeByAddressMemoryInfo = $this->valkey_glide->info(['type' => 'routeByAddress', 'host' => self::getClusterHost(), 'port' => self::getClusterPort()], "memory");
         $this->assertIsArray($routeByAddressMemoryInfo);
         $this->assertArrayKey($routeByAddressMemoryInfo, "used_memory");
 
@@ -1314,7 +1316,7 @@ class ValkeyGlideClusterTest extends ValkeyGlideTest
     {
         // Test that refresh_topology_from_initial_nodes defaults to false when not specified
         $client = new ValkeyGlideCluster(
-            addresses: [['host' => 'localhost', 'port' => 7001]],
+            addresses: [['host' => self::getClusterHost(), 'port' => self::getClusterPort()]],
             use_tls: false,
             credentials: null,
             read_from: ValkeyGlide::READ_FROM_PREFER_REPLICA,
@@ -1337,7 +1339,7 @@ class ValkeyGlideClusterTest extends ValkeyGlideTest
     {
         // Test that refresh_topology_from_initial_nodes can be set to true
         $client = new ValkeyGlideCluster(
-            addresses: [['host' => 'localhost', 'port' => 7001]],
+            addresses: [['host' => self::getClusterHost(), 'port' => self::getClusterPort()]],
             use_tls: false,
             credentials: null,
             read_from: ValkeyGlide::READ_FROM_PREFER_REPLICA,
@@ -1363,7 +1365,7 @@ class ValkeyGlideClusterTest extends ValkeyGlideTest
     {
         // Test that refresh_topology_from_initial_nodes can be explicitly set to false
         $client = new ValkeyGlideCluster(
-            addresses: [['host' => 'localhost', 'port' => 7001]],
+            addresses: [['host' => self::getClusterHost(), 'port' => self::getClusterPort()]],
             use_tls: false,
             credentials: null,
             read_from: ValkeyGlide::READ_FROM_PREFER_REPLICA,
@@ -1389,7 +1391,7 @@ class ValkeyGlideClusterTest extends ValkeyGlideTest
     public function testTlsSecureStream()
     {
         $client = new ValkeyGlideCluster(
-            addresses: [self::TLS_ADDRESS_CLUSTER],
+            addresses: [self::getTlsAddressCluster()],
             context: stream_context_create(['ssl' => ['cafile' => self::TLS_CERTIFICATE_PATH]])
         );
 
@@ -1399,7 +1401,7 @@ class ValkeyGlideClusterTest extends ValkeyGlideTest
     public function testTlsSecureConfig()
     {
         $client = new ValkeyGlideCluster(
-            addresses: [self::TLS_ADDRESS_CLUSTER],
+            addresses: [self::getTlsAddressCluster()],
             use_tls: true,
             advanced_config: ['tls_config' => ['root_certs' => file_get_contents(self::TLS_CERTIFICATE_PATH)]]
         );
@@ -1410,7 +1412,7 @@ class ValkeyGlideClusterTest extends ValkeyGlideTest
     public function testTlsInsecureStream()
     {
         $client = new ValkeyGlideCluster(
-            addresses: [self::TLS_ADDRESS_CLUSTER],
+            addresses: [self::getTlsAddressCluster()],
             context: stream_context_create(['ssl' => ['verify_peer' => false]])
         );
 
@@ -1420,7 +1422,7 @@ class ValkeyGlideClusterTest extends ValkeyGlideTest
     public function testTlsInsecureConfig()
     {
         $client = new ValkeyGlideCluster(
-            addresses: [self::TLS_ADDRESS_CLUSTER],
+            addresses: [self::getTlsAddressCluster()],
             use_tls: true,
             advanced_config: ['tls_config' => ['use_insecure_tls' => true]]
         );
@@ -1504,7 +1506,7 @@ class ValkeyGlideClusterTest extends ValkeyGlideTest
 
         $this->assertTrue(class_exists('RedisCluster'), 'RedisCluster class alias should exist');
 
-        $cluster = new RedisCluster(addresses: [['host' => '127.0.0.1', 'port' => 7001]]);
+        $cluster = new RedisCluster(addresses: [['host' => self::getClusterHost(), 'port' => self::getClusterPort()]]);
         $this->assertTrue($cluster instanceof RedisCluster, 'Instance should be RedisCluster');
         $this->assertTrue($cluster instanceof ValkeyGlideCluster, 'Instance should be ValkeyGlideCluster');
 

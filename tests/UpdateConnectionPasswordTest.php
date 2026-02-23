@@ -14,7 +14,7 @@ class UpdateConnectionPasswordTest extends TestSuite
         $credentials = $password ? ['password' => $password] : null;
         $client = new ValkeyGlide();
         $client->connect(
-            addresses: [['host' => '127.0.0.1', 'port' => 6379]],
+            addresses: [['host' => $this->getHost(), 'port' => $this->getPort()]],
             use_tls: false,
             credentials: $credentials
         );
@@ -25,7 +25,7 @@ class UpdateConnectionPasswordTest extends TestSuite
     {
         $credentials = $password ? ['password' => $password] : null;
         return new ValkeyGlideCluster(
-            addresses: [['host' => '127.0.0.1', 'port' => 7001]],
+            addresses: [['host' => self::getClusterHost(), 'port' => self::getClusterPort()]],
             use_tls: false,
             credentials: $credentials,
             read_from: ValkeyGlide::READ_FROM_PRIMARY,
