@@ -7869,7 +7869,7 @@ if (extension_loaded("valkey_glide") || dl("' . __DIR__ . '/../modules/valkey_gl
         // Test that refresh_topology_from_initial_nodes is ignored for standalone clients
         $client = new ValkeyGlide();
         $client->connect(
-            addresses: [['host' => 'localhost', 'port' => 6379]],
+            addresses: [['host' => $this->getHost(), 'port' => $this->getPort()]],
             use_tls: false,
             credentials: null,
             read_from: ValkeyGlide::READ_FROM_PRIMARY,
@@ -7896,7 +7896,7 @@ if (extension_loaded("valkey_glide") || dl("' . __DIR__ . '/../modules/valkey_gl
     {
         $client = new ValkeyGlide();
         $client->connect(
-            addresses: [self::TLS_ADDRESS_STANDALONE],
+            addresses: [self::getTlsAddressStandalone()],
             advanced_config: ['connection_timeout' => 5000], # Allow longer timeout for TLS connection
             context: stream_context_create(['ssl' => ['cafile' => self::TLS_CERTIFICATE_PATH]])
         );
@@ -7908,7 +7908,7 @@ if (extension_loaded("valkey_glide") || dl("' . __DIR__ . '/../modules/valkey_gl
     {
         $client = new ValkeyGlide();
         $client->connect(
-            addresses: [self::TLS_ADDRESS_STANDALONE],
+            addresses: [self::getTlsAddressStandalone()],
             use_tls: true,
             advanced_config: [
                 'connection_timeout' => 5000, # Allow longer timeout for TLS connection
@@ -7923,7 +7923,7 @@ if (extension_loaded("valkey_glide") || dl("' . __DIR__ . '/../modules/valkey_gl
     {
         $client = new ValkeyGlide();
         $client->connect(
-            addresses: [self::TLS_ADDRESS_STANDALONE],
+            addresses: [self::getTlsAddressStandalone()],
             advanced_config: ['connection_timeout' => 5000], # Allow longer timeout for TLS connection
             context: stream_context_create(['ssl' => ['verify_peer' => false]])
         );
@@ -7935,7 +7935,7 @@ if (extension_loaded("valkey_glide") || dl("' . __DIR__ . '/../modules/valkey_gl
     {
         $client = new ValkeyGlide();
         $client->connect(
-            addresses: [self::TLS_ADDRESS_STANDALONE],
+            addresses: [self::getTlsAddressStandalone()],
             use_tls: true,
             advanced_config: [
                 'connection_timeout' => 5000, # Allow longer timeout for TLS connection

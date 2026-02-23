@@ -60,11 +60,11 @@ class ValkeyGlideFeaturesTest extends ValkeyGlideBaseTest
 
     public function testConstructorWithMultipleAddresses()
     {
-        // Test constructor with multiple addresses for failover
+        // Test constructor with multiple addresses (primary + replicas)
         $addresses = [
-            ['host' => '127.0.0.1', 'port' => 6379],
-            ['host' => '127.0.0.1', 'port' => 6380],
-            ['host' => 'localhost', 'port' => 6381]
+            ['host' => $this->getHost(), 'port' => $this->getPort()],
+            ['host' => self::getReplica1Host(), 'port' => self::getReplica1Port()],
+            ['host' => self::getReplica2Host(), 'port' => self::getReplica2Port()]
         ];
 
         if (!$this->getTLS()) {
@@ -191,11 +191,11 @@ class ValkeyGlideFeaturesTest extends ValkeyGlideBaseTest
 
     public function testConstructorWithReadFromPrimary()
     {
-        // Test constructor with READ_FROM_PRIMARY strategy
+        // Test constructor with READ_FROM_PRIMARY strategy (primary + replicas)
         $addresses = [
-            ['host' => '127.0.0.1', 'port' => 6379],
-            ['host' => '127.0.0.1', 'port' => 6380],
-            ['host' => 'localhost', 'port' => 6381]
+            ['host' => $this->getHost(), 'port' => $this->getPort()],
+            ['host' => self::getReplica1Host(), 'port' => self::getReplica1Port()],
+            ['host' => self::getReplica2Host(), 'port' => self::getReplica2Port()]
         ];
 
 
@@ -209,11 +209,11 @@ class ValkeyGlideFeaturesTest extends ValkeyGlideBaseTest
 
     public function testConstructorWithReadFromPreferReplica()
     {
-        // Test constructor with READ_FROM_PREFER_REPLICA strategy
+        // Test constructor with READ_FROM_PREFER_REPLICA strategy (primary + replicas)
         $addresses = [
-            ['host' => '127.0.0.1', 'port' => 6379],
-            ['host' => '127.0.0.1', 'port' => 6380],
-            ['host' => 'localhost', 'port' => 6381]
+            ['host' => $this->getHost(), 'port' => $this->getPort()],
+            ['host' => self::getReplica1Host(), 'port' => self::getReplica1Port()],
+            ['host' => self::getReplica2Host(), 'port' => self::getReplica2Port()]
         ];
 
 
@@ -1037,7 +1037,7 @@ class ValkeyGlideFeaturesTest extends ValkeyGlideBaseTest
         $client = new ValkeyGlide();
         $client->connect(
             addresses: [
-                ['host' => 'localhost', 'port' => 6379]
+                ['host' => $this->getHost(), 'port' => $this->getPort()]
             ],
             use_tls: false,
             credentials: null,
@@ -1123,7 +1123,7 @@ class ValkeyGlideFeaturesTest extends ValkeyGlideBaseTest
         $client = new ValkeyGlide();
         $client->connect(
             addresses: [
-                ['host' => 'localhost', 'port' => 6379]
+                ['host' => $this->getHost(), 'port' => $this->getPort()]
             ],
             use_tls: false,
             credentials: null,
@@ -1170,7 +1170,7 @@ class ValkeyGlideFeaturesTest extends ValkeyGlideBaseTest
             $client = new ValkeyGlide();
             $client->connect(
                 addresses: [
-                    ['host' => 'localhost', 'port' => 6379]
+                    ['host' => $this->getHost(), 'port' => $this->getPort()]
                 ],
                 use_tls: false,
                 credentials: null,
@@ -1200,7 +1200,7 @@ class ValkeyGlideFeaturesTest extends ValkeyGlideBaseTest
         $client = new ValkeyGlide();
         $client->connect(
             addresses: [
-                ['host' => 'localhost', 'port' => 6379]
+                ['host' => $this->getHost(), 'port' => $this->getPort()]
             ],
             use_tls: false,
             credentials: null,
@@ -1253,7 +1253,7 @@ class ValkeyGlideFeaturesTest extends ValkeyGlideBaseTest
         $client = new ValkeyGlide();
         $client->connect(
             addresses: [
-                ['host' => 'localhost', 'port' => 6379]
+                ['host' => $this->getHost(), 'port' => $this->getPort()]
             ],
             use_tls: false,
             advanced_config: [

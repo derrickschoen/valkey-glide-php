@@ -150,7 +150,7 @@ class PHPRedisStyleConnectionTest extends TestSuite
 
         try {
             // This should fail - mixing positional host with named addresses
-            $client->connect($this->getHost(), addresses: [['host' => 'localhost', 'port' => 6379]]);
+            $client->connect($this->getHost(), addresses: [['host' => $this->getHost(), 'port' => $this->getPort()]]);
             $this->fail('Should throw exception for conflicting parameters');
         } catch (Exception $e) {
             $this->assertStringContainsString('Cannot specify both', $e->getMessage());
@@ -240,8 +240,8 @@ class PHPRedisStyleConnectionTest extends TestSuite
     public function testClusterConnectWithSeeds()
     {
         $seeds = [
-            ['host' => '127.0.0.1', 'port' => 7001],
-            ['host' => '127.0.0.1', 'port' => 7002],
+            ['host' => self::getClusterHost(), 'port' => self::getClusterPort()],
+            ['host' => self::getClusterHost(), 'port' => self::getClusterPort()],
         ];
 
         $cluster = new ValkeyGlideCluster(name: null, seeds: $seeds);
@@ -257,7 +257,7 @@ class PHPRedisStyleConnectionTest extends TestSuite
      */
     public function testClusterConnectWithTimeout()
     {
-        $seeds = [['host' => '127.0.0.1', 'port' => 7001]];
+        $seeds = [['host' => self::getClusterHost(), 'port' => self::getClusterPort()]];
 
         $cluster = new ValkeyGlideCluster(name: null, seeds: $seeds, timeout: 2.5);
 
@@ -279,7 +279,7 @@ class PHPRedisStyleConnectionTest extends TestSuite
             return;
         }
 
-        $seeds = [['host' => '127.0.0.1', 'port' => 7001]];
+        $seeds = [['host' => self::getClusterHost(), 'port' => self::getClusterPort()]];
         $password = is_array($this->getAuth()) ? $this->getAuth()['password'] : $this->getAuth();
 
         $cluster = new ValkeyGlideCluster(name: null, seeds: $seeds, auth: $password);
@@ -300,7 +300,7 @@ class PHPRedisStyleConnectionTest extends TestSuite
             return;
         }
 
-        $seeds = [['host' => '127.0.0.1', 'port' => 7001]];
+        $seeds = [['host' => self::getClusterHost(), 'port' => self::getClusterPort()]];
         $auth = [$this->getAuth()['username'], $this->getAuth()['password']];
 
         $cluster = new ValkeyGlideCluster(name: null, seeds: $seeds, auth: $auth);
@@ -317,8 +317,8 @@ class PHPRedisStyleConnectionTest extends TestSuite
     public function testClusterConnectWithAddresses()
     {
         $addresses = [
-            ['host' => '127.0.0.1', 'port' => 7001],
-            ['host' => '127.0.0.1', 'port' => 7002],
+            ['host' => self::getClusterHost(), 'port' => self::getClusterPort()],
+            ['host' => self::getClusterHost(), 'port' => self::getClusterPort()],
         ];
 
         $cluster = new ValkeyGlideCluster(addresses: $addresses);
@@ -338,8 +338,8 @@ class PHPRedisStyleConnectionTest extends TestSuite
     {
         try {
             $cluster = new ValkeyGlideCluster(
-                seeds: [['host' => '127.0.0.1', 'port' => 7001]],
-                addresses: [['host' => '127.0.0.1', 'port' => 7002]]
+                seeds: [['host' => self::getClusterHost(), 'port' => self::getClusterPort()]],
+                addresses: [['host' => self::getClusterHost(), 'port' => self::getClusterPort()]]
             );
             $this->fail('Should throw exception for conflicting parameters');
         } catch (Exception $e) {
@@ -357,7 +357,7 @@ class PHPRedisStyleConnectionTest extends TestSuite
             return;
         }
 
-        $addresses = [['host' => '127.0.0.1', 'port' => 7001]];
+        $addresses = [['host' => self::getClusterHost(), 'port' => self::getClusterPort()]];
         $credentials = is_array($this->getAuth()) ? $this->getAuth() : ['password' => $this->getAuth()];
 
         $cluster = new ValkeyGlideCluster(addresses: $addresses, credentials: $credentials);
@@ -383,7 +383,7 @@ class PHPRedisStyleConnectionTest extends TestSuite
         $this->assertTrue(class_exists('RedisCluster'), 'RedisCluster class alias should exist');
         $this->assertTrue(class_exists('RedisException'), 'RedisException class alias should exist');
 
-        $seeds = [['host' => '127.0.0.1', 'port' => 7001]];
+        $seeds = [['host' => self::getClusterHost(), 'port' => self::getClusterPort()]];
         $cluster = new RedisCluster(name: null, seeds: $seeds);
 
         $this->assertTrue($cluster instanceof RedisCluster, 'Instance should be RedisCluster');

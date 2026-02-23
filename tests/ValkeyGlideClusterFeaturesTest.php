@@ -17,7 +17,7 @@ class ValkeyGlideClusterFeaturesTest extends ValkeyGlideClusterBaseTest
     {
         // Test creating ValkeyGlideCluster with basic configuration
         $valkey_glide = new ValkeyGlideCluster(
-            addresses: [['host' => '127.0.0.1', 'port' => 7001]],
+            addresses: [['host' => self::getClusterHost(), 'port' => self::getClusterPort()]],
             use_tls: false,
             credentials: $this->getAuth(),
             read_from: ValkeyGlide::READ_FROM_PRIMARY
@@ -38,9 +38,9 @@ class ValkeyGlideClusterFeaturesTest extends ValkeyGlideClusterBaseTest
     {
         // Test with multiple cluster addresses
         $addresses = [
-            ['host' => '127.0.0.1', 'port' => 7001],
-            ['host' => '127.0.0.1', 'port' => 7002],
-            ['host' => '127.0.0.1', 'port' => 7003]
+            ['host' => self::getClusterHost(), 'port' => self::getClusterPort()],
+            ['host' => self::getClusterHost(), 'port' => self::getClusterPort()],
+            ['host' => self::getClusterHost(), 'port' => self::getClusterPort()]
         ];
 
         $valkey_glide = new ValkeyGlideCluster(addresses: $addresses, use_tls: false, credentials: $this->getAuth());
@@ -56,7 +56,7 @@ class ValkeyGlideClusterFeaturesTest extends ValkeyGlideClusterBaseTest
     {
         // Test with TLS explicitly disabled
         $valkey_glide = new ValkeyGlideCluster(
-            addresses: [['host' => '127.0.0.1', 'port' => 7001]],
+            addresses: [['host' => self::getClusterHost(), 'port' => self::getClusterPort()]],
             use_tls: false,
             credentials: $this->getAuth()
         );
@@ -69,7 +69,7 @@ class ValkeyGlideClusterFeaturesTest extends ValkeyGlideClusterBaseTest
     {
         // Test with TLS explicitly enabled. Also enable 1 minute timeout for valgrind runs.
         $valkey_glide = new ValkeyGlideCluster(
-            addresses: [['host' => '127.0.0.1', 'port' => 8001]],
+            addresses: [['host' => self::getTlsClusterHost(), 'port' => self::getTlsClusterPort()]],
             use_tls:true, // use_tls enabled
             credentials: $this->getAuth(),
             advanced_config: [ 'tls_config' => ['use_insecure_tls' => true], 'connection_timeout' => 60000]
@@ -87,7 +87,7 @@ class ValkeyGlideClusterFeaturesTest extends ValkeyGlideClusterBaseTest
     {
         // Test with no credentials (null)
         $valkey_glide = new ValkeyGlideCluster(
-            addresses: [['host' => '127.0.0.1', 'port' => 7001]],
+            addresses: [['host' => self::getClusterHost(), 'port' => self::getClusterPort()]],
             use_tls: false,
             credentials: null // no credentials
         );
@@ -100,9 +100,9 @@ class ValkeyGlideClusterFeaturesTest extends ValkeyGlideClusterBaseTest
     {
         // Test with password-only credentials
         $valkey_glide = new ValkeyGlideCluster(
-            addresses: [['host' => '127.0.0.1', 'port' => 5001]],
+            addresses: [['host' => self::getAuthClusterHost(), 'port' => self::getAuthClusterPort()]],
             use_tls: false,
-            credentials: ['username' => '', 'password' => 'dummy_password'] // password credentials
+            credentials: ['username' => '', 'password' => self::getAuthClusterPassword()]
         );
 
         $this->assertTrue($valkey_glide->ping(['type' => 'primarySlotKey', 'key' => 'test']));
@@ -111,9 +111,9 @@ class ValkeyGlideClusterFeaturesTest extends ValkeyGlideClusterBaseTest
 
     public function testConstructorInvalidAuth()
     {
-        // Test constructor with credentials (if auth is configured)
+        // Test constructor with invalid credentials against auth cluster
         $addresses = [
-            [['host' => '127.0.0.1', 'port' => 5001]],
+            ['host' => self::getAuthClusterHost(), 'port' => self::getAuthClusterPort()],
         ];
 
         // Try to connect with incorrect auth
@@ -138,7 +138,7 @@ class ValkeyGlideClusterFeaturesTest extends ValkeyGlideClusterBaseTest
     {
         // Test with READ_FROM_PRIMARY strategy
         $valkey_glide = new ValkeyGlideCluster(
-            addresses: [['host' => '127.0.0.1', 'port' => 7001]],
+            addresses: [['host' => self::getClusterHost(), 'port' => self::getClusterPort()]],
             use_tls: false,
             credentials: $this->getAuth(),
             read_from: ValkeyGlide::READ_FROM_PRIMARY
@@ -152,7 +152,7 @@ class ValkeyGlideClusterFeaturesTest extends ValkeyGlideClusterBaseTest
     {
         // Test with READ_FROM_PREFER_REPLICA strategy
         $valkey_glide = new ValkeyGlideCluster(
-            addresses: [['host' => '127.0.0.1', 'port' => 7001]],
+            addresses: [['host' => self::getClusterHost(), 'port' => self::getClusterPort()]],
             use_tls: false,
             credentials: $this->getAuth(),
             read_from: ValkeyGlide::READ_FROM_PREFER_REPLICA
@@ -166,7 +166,7 @@ class ValkeyGlideClusterFeaturesTest extends ValkeyGlideClusterBaseTest
     {
         // Test with READ_FROM_AZ_AFFINITY strategy
         $valkey_glide = new ValkeyGlideCluster(
-            addresses: [['host' => '127.0.0.1', 'port' => 7001]],
+            addresses: [['host' => self::getClusterHost(), 'port' => self::getClusterPort()]],
             use_tls: false,
             credentials: $this->getAuth(),
             read_from: ValkeyGlide::READ_FROM_AZ_AFFINITY
@@ -180,7 +180,7 @@ class ValkeyGlideClusterFeaturesTest extends ValkeyGlideClusterBaseTest
     {
         // Test with READ_FROM_AZ_AFFINITY_REPLICAS_AND_PRIMARY strategy
         $valkey_glide = new ValkeyGlideCluster(
-            addresses: [['host' => '127.0.0.1', 'port' => 7001]],
+            addresses: [['host' => self::getClusterHost(), 'port' => self::getClusterPort()]],
             use_tls: false,
             credentials: $this->getAuth(),
             read_from: ValkeyGlide::READ_FROM_AZ_AFFINITY_REPLICAS_AND_PRIMARY
@@ -198,7 +198,7 @@ class ValkeyGlideClusterFeaturesTest extends ValkeyGlideClusterBaseTest
     {
         // Test with 5 second timeout
         $valkey_glide = new ValkeyGlideCluster(
-            addresses: [['host' => '127.0.0.1', 'port' => 7001]],
+            addresses: [['host' => self::getClusterHost(), 'port' => self::getClusterPort()]],
             use_tls: false,
             credentials: $this->getAuth(),
             read_from: ValkeyGlide::READ_FROM_PRIMARY,
@@ -213,7 +213,7 @@ class ValkeyGlideClusterFeaturesTest extends ValkeyGlideClusterBaseTest
     {
         // Test with 1 second timeout
         $valkey_glide = new ValkeyGlideCluster(
-            addresses: [['host' => '127.0.0.1', 'port' => 7001]],
+            addresses: [['host' => self::getClusterHost(), 'port' => self::getClusterPort()]],
             use_tls: false,
             credentials: $this->getAuth(),
             read_from: ValkeyGlide::READ_FROM_PRIMARY,
@@ -235,7 +235,7 @@ class ValkeyGlideClusterFeaturesTest extends ValkeyGlideClusterBaseTest
     {
         // Test with 10 second timeout
         $valkey_glide = new ValkeyGlideCluster(
-            addresses: [['host' => '127.0.0.1', 'port' => 7001]],
+            addresses: [['host' => self::getClusterHost(), 'port' => self::getClusterPort()]],
             use_tls: false,
             credentials: $this->getAuth(),
             read_from: ValkeyGlide::READ_FROM_PRIMARY,
@@ -256,7 +256,7 @@ class ValkeyGlideClusterFeaturesTest extends ValkeyGlideClusterBaseTest
         $reconnectStrategy = ['num_of_retries' => 5];
 
         $valkey_glide = new ValkeyGlideCluster(
-            addresses: [['host' => '127.0.0.1', 'port' => 7001]],
+            addresses: [['host' => self::getClusterHost(), 'port' => self::getClusterPort()]],
             use_tls: false,
             credentials: $this->getAuth(),
             read_from: ValkeyGlide::READ_FROM_PRIMARY,
@@ -279,7 +279,7 @@ class ValkeyGlideClusterFeaturesTest extends ValkeyGlideClusterBaseTest
         ];
 
         $valkey_glide = new ValkeyGlideCluster(
-            addresses: [['host' => '127.0.0.1', 'port' => 7001]],
+            addresses: [['host' => self::getClusterHost(), 'port' => self::getClusterPort()]],
             use_tls: false,
             credentials: $this->getAuth(),
             read_from: ValkeyGlide::READ_FROM_PRIMARY,
@@ -300,7 +300,7 @@ class ValkeyGlideClusterFeaturesTest extends ValkeyGlideClusterBaseTest
         // Test with custom client name
 
         $valkey_glide = new ValkeyGlideCluster(
-            addresses: [['host' => '127.0.0.1', 'port' => 7001]],
+            addresses: [['host' => self::getClusterHost(), 'port' => self::getClusterPort()]],
             use_tls: false,
             credentials: $this->getAuth(),
             read_from: ValkeyGlide::READ_FROM_PRIMARY,
@@ -322,7 +322,7 @@ class ValkeyGlideClusterFeaturesTest extends ValkeyGlideClusterBaseTest
     {
         // Test with periodic checks enabled (default)
         $valkey_glide = new ValkeyGlideCluster(
-            addresses: [['host' => '127.0.0.1', 'port' => 7001]],
+            addresses: [['host' => self::getClusterHost(), 'port' => self::getClusterPort()]],
             use_tls: false,
             credentials: $this->getAuth(),
             read_from: ValkeyGlide::READ_FROM_PRIMARY,
@@ -340,7 +340,7 @@ class ValkeyGlideClusterFeaturesTest extends ValkeyGlideClusterBaseTest
     {
         // Test with periodic checks disabled
         $valkey_glide = new ValkeyGlideCluster(
-            addresses: [['host' => '127.0.0.1', 'port' => 7001]],
+            addresses: [['host' => self::getClusterHost(), 'port' => self::getClusterPort()]],
             use_tls: false,
             credentials: $this->getAuth(),
             read_from: ValkeyGlide::READ_FROM_PRIMARY,
@@ -362,7 +362,7 @@ class ValkeyGlideClusterFeaturesTest extends ValkeyGlideClusterBaseTest
     {
         // Test with client availability zone
         $valkey_glide = new ValkeyGlideCluster(
-            addresses: [['host' => '127.0.0.1', 'port' => 7001]],
+            addresses: [['host' => self::getClusterHost(), 'port' => self::getClusterPort()]],
             use_tls: false,
             credentials: $this->getAuth(),
             read_from: ValkeyGlide::READ_FROM_PRIMARY,
@@ -381,7 +381,7 @@ class ValkeyGlideClusterFeaturesTest extends ValkeyGlideClusterBaseTest
     {
         // Test with different client availability zone
         $valkey_glide = new ValkeyGlideCluster(
-            addresses: [['host' => '127.0.0.1', 'port' => 7001]],
+            addresses: [['host' => self::getClusterHost(), 'port' => self::getClusterPort()]],
             use_tls: false,
             credentials: $this->getAuth(),
             read_from: ValkeyGlide::READ_FROM_PRIMARY,
@@ -409,7 +409,7 @@ class ValkeyGlideClusterFeaturesTest extends ValkeyGlideClusterBaseTest
         ];
 
         $valkey_glide = new ValkeyGlideCluster(
-            addresses: [['host' => '127.0.0.1', 'port' => 7001]],
+            addresses: [['host' => self::getClusterHost(), 'port' => self::getClusterPort()]],
             use_tls: false,
             credentials: $this->getAuth(),
             read_from: ValkeyGlide::READ_FROM_PRIMARY,
@@ -438,7 +438,7 @@ class ValkeyGlideClusterFeaturesTest extends ValkeyGlideClusterBaseTest
             $key =
             // Create monitoring client and get the initial count.
             $valkey_glide_monitoring = new ValkeyGlideCluster(
-                addresses: [['host' => '127.0.0.1', 'port' => 7001]],
+                addresses: [['host' => self::getClusterHost(), 'port' => self::getClusterPort()]],
                 use_tls: false,
                 credentials: $this->getAuth(),
                 read_from: ValkeyGlide::READ_FROM_PRIMARY,
@@ -456,7 +456,7 @@ class ValkeyGlideClusterFeaturesTest extends ValkeyGlideClusterBaseTest
 
             // Test with lazy connection enabled
             $valkey_glide_lazy = new ValkeyGlideCluster(
-                addresses: [['host' => '127.0.0.1', 'port' => 7001]],
+                addresses: [['host' => self::getClusterHost(), 'port' => self::getClusterPort()]],
                 use_tls: false,
                 credentials: $this->getAuth(),
                 read_from: ValkeyGlide::READ_FROM_PRIMARY,
@@ -486,7 +486,7 @@ class ValkeyGlideClusterFeaturesTest extends ValkeyGlideClusterBaseTest
     {
         // Test with lazy connection disabled
         $valkey_glide = new ValkeyGlideCluster(
-            addresses: [['host' => '127.0.0.1', 'port' => 7001]],
+            addresses: [['host' => self::getClusterHost(), 'port' => self::getClusterPort()]],
             use_tls: false,
             credentials: $this->getAuth(),
             read_from: ValkeyGlide::READ_FROM_PRIMARY,
@@ -511,8 +511,8 @@ class ValkeyGlideClusterFeaturesTest extends ValkeyGlideClusterBaseTest
     {
         // Test with all parameters specified
         $addresses = [
-            ['host' => '127.0.0.1', 'port' => 7001],
-            ['host' => '127.0.0.1', 'port' => 7002]
+            ['host' => self::getClusterHost(), 'port' => self::getClusterPort()],
+            ['host' => self::getClusterHost(), 'port' => self::getClusterPort()]
         ];
         $credentials = $this->getAuth();
         $reconnectStrategy = ['num_of_retries' => 3, 'factor' => 2];
@@ -548,7 +548,7 @@ class ValkeyGlideClusterFeaturesTest extends ValkeyGlideClusterBaseTest
     {
         // Test with commonly used parameter combination
         $valkey_glide = new ValkeyGlideCluster(
-            addresses: [['host' => '127.0.0.1', 'port' => 7001]],
+            addresses: [['host' => self::getClusterHost(), 'port' => self::getClusterPort()]],
             use_tls: false,                                      // use_tls
             credentials: $this->getAuth(),                          // credentials
             read_from: ValkeyGlide::READ_FROM_PREFER_REPLICA,     // read_from
@@ -570,7 +570,7 @@ class ValkeyGlideClusterFeaturesTest extends ValkeyGlideClusterBaseTest
      */
     public function testClusterConstructorAcceptsDatabaseId(): void
     {
-        $addresses = [['host' => 'localhost', 'port' => 7001]];
+        $addresses = [['host' => self::getClusterHost(), 'port' => self::getClusterPort()]];
 
         // Test that constructor accepts all 12 parameters including database_id
         try {
@@ -606,7 +606,7 @@ class ValkeyGlideClusterFeaturesTest extends ValkeyGlideClusterBaseTest
     {
         try {
             $valkey_glide = new ValkeyGlideCluster(
-                addresses: [['host' => '127.0.0.1', 'port' => 7001]],                          // addresses
+                addresses: [['host' => self::getClusterHost(), 'port' => self::getClusterPort()]],                          // addresses
                 use_tls: false,                               // use_tls
                 credentials: null,                                // credentials
                 read_from: ValkeyGlide::READ_FROM_PRIMARY,     // read_from
@@ -635,7 +635,7 @@ class ValkeyGlideClusterFeaturesTest extends ValkeyGlideClusterBaseTest
      */
     public function testClusterConstructorBackwardCompatibility(): void
     {
-        $addresses = [['host' => 'localhost', 'port' => 7001]];
+        $addresses = [['host' => self::getClusterHost(), 'port' => self::getClusterPort()]];
 
         try {
             // Test with 11 parameters (without database_id) - should still work
@@ -669,7 +669,7 @@ class ValkeyGlideClusterFeaturesTest extends ValkeyGlideClusterBaseTest
      */
     public function testClusterConstructorParameterCount(): void
     {
-        $addresses = [['host' => 'localhost', 'port' => 7001]];
+        $addresses = [['host' => self::getClusterHost(), 'port' => self::getClusterPort()]];
 
         try {
             $client = new ValkeyGlideCluster(
@@ -779,9 +779,9 @@ class ValkeyGlideClusterFeaturesTest extends ValkeyGlideClusterBaseTest
         // Create cluster client with OpenTelemetry configuration
         $client = new ValkeyGlideCluster(
             addresses: [
-                ['host' => 'localhost', 'port' => 7001],
-                ['host' => 'localhost', 'port' => 7002],
-                ['host' => 'localhost', 'port' => 7003]
+                ['host' => self::getClusterHost(), 'port' => self::getClusterPort()],
+                ['host' => self::getClusterHost(), 'port' => self::getClusterPort()],
+                ['host' => self::getClusterHost(), 'port' => self::getClusterPort()]
             ],
             use_tls: false,
             credentials: null,
@@ -871,9 +871,9 @@ class ValkeyGlideClusterFeaturesTest extends ValkeyGlideClusterBaseTest
 
         $client = new ValkeyGlideCluster(
             addresses: [
-                ['host' => 'localhost', 'port' => 7001],
-                ['host' => 'localhost', 'port' => 7002],
-                ['host' => 'localhost', 'port' => 7003]
+                ['host' => self::getClusterHost(), 'port' => self::getClusterPort()],
+                ['host' => self::getClusterHost(), 'port' => self::getClusterPort()],
+                ['host' => self::getClusterHost(), 'port' => self::getClusterPort()]
             ],
             use_tls: false,
             credentials: null,
@@ -921,9 +921,9 @@ class ValkeyGlideClusterFeaturesTest extends ValkeyGlideClusterBaseTest
         try {
             $client = new ValkeyGlideCluster(
                 addresses: [
-                    ['host' => 'localhost', 'port' => 7001],
-                    ['host' => 'localhost', 'port' => 7002],
-                    ['host' => 'localhost', 'port' => 7003]
+                    ['host' => self::getClusterHost(), 'port' => self::getClusterPort()],
+                    ['host' => self::getClusterHost(), 'port' => self::getClusterPort()],
+                    ['host' => self::getClusterHost(), 'port' => self::getClusterPort()]
                 ],
                 use_tls: false,
                 credentials: null,
@@ -954,9 +954,9 @@ class ValkeyGlideClusterFeaturesTest extends ValkeyGlideClusterBaseTest
         // Test that cluster client works normally without OpenTelemetry configuration
         $client = new ValkeyGlideCluster(
             addresses: [
-                ['host' => 'localhost', 'port' => 7001],
-                ['host' => 'localhost', 'port' => 7002],
-                ['host' => 'localhost', 'port' => 7003]
+                ['host' => self::getClusterHost(), 'port' => self::getClusterPort()],
+                ['host' => self::getClusterHost(), 'port' => self::getClusterPort()],
+                ['host' => self::getClusterHost(), 'port' => self::getClusterPort()]
             ],
             use_tls: false,
             credentials: null,
@@ -1008,9 +1008,9 @@ class ValkeyGlideClusterFeaturesTest extends ValkeyGlideClusterBaseTest
 
         $client = new ValkeyGlideCluster(
             addresses: [
-                ['host' => 'localhost', 'port' => 7001],
-                ['host' => 'localhost', 'port' => 7002],
-                ['host' => 'localhost', 'port' => 7003]
+                ['host' => self::getClusterHost(), 'port' => self::getClusterPort()],
+                ['host' => self::getClusterHost(), 'port' => self::getClusterPort()],
+                ['host' => self::getClusterHost(), 'port' => self::getClusterPort()]
             ],
             use_tls: false,
             advanced_config: [

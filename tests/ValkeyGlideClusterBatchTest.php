@@ -37,7 +37,7 @@ class ValkeyGlideClusterBatchTest extends ValkeyGlideBatchTest
     {
         try {
             return new ValkeyGlideCluster(
-                addresses: [['host' => '127.0.0.1', 'port' => 7001]],
+                addresses: [['host' => self::getClusterHost(), 'port' => self::getClusterPort()]],
                 use_tls: false,
                 credentials: $this->getAuth(),
                 read_from: ValkeyGlide::READ_FROM_PRIMARY,

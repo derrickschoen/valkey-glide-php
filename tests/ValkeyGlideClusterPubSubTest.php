@@ -143,8 +143,8 @@ class ValkeyGlideClusterPubSubTest extends ValkeyGlideClusterBaseTest
 
         $cmd = $this->buildSubscriberCommand(
             $sub_script,
-            '127.0.0.1',
-            7001,
+            self::getClusterHost(),
+            self::getClusterPort(),
             $channel,
             $message,
             $sync_file,
@@ -222,8 +222,8 @@ class ValkeyGlideClusterPubSubTest extends ValkeyGlideClusterBaseTest
 
         $cmd = $this->buildSubscriberCommand(
             $sub_script,
-            '127.0.0.1',
-            7001,
+            self::getClusterHost(),
+            self::getClusterPort(),
             $channel,
             $sync_file,
             $unsub_file
@@ -297,8 +297,8 @@ class ValkeyGlideClusterPubSubTest extends ValkeyGlideClusterBaseTest
 
         $cmd = $this->buildSubscriberCommand(
             $sub_script,
-            '127.0.0.1',
-            7001,
+            self::getClusterHost(),
+            self::getClusterPort(),
             $pattern,
             $channel,
             $message,
