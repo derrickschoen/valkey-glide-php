@@ -133,6 +133,71 @@ class TestSuite
         return $this->tls;
     }
 
+    protected static function getClusterHost(): string
+    {
+        return getenv('VALKEY_CLUSTER_HOST') ?: '127.0.0.1';
+    }
+
+    protected static function getClusterPort(): int
+    {
+        return (int)(getenv('VALKEY_CLUSTER_PORT') ?: 7001);
+    }
+
+    protected static function getTlsClusterHost(): string
+    {
+        return getenv('VALKEY_CLUSTER_TLS_HOST') ?: '127.0.0.1';
+    }
+
+    protected static function getTlsClusterPort(): int
+    {
+        return (int)(getenv('VALKEY_CLUSTER_TLS_PORT') ?: 8001);
+    }
+
+    protected static function getAuthClusterHost(): string
+    {
+        return getenv('VALKEY_AUTH_CLUSTER_HOST') ?: '127.0.0.1';
+    }
+
+    protected static function getAuthClusterPort(): int
+    {
+        return (int)(getenv('VALKEY_AUTH_CLUSTER_PORT') ?: 5001);
+    }
+
+    protected static function getAuthClusterPassword(): string
+    {
+        return getenv('VALKEY_AUTH_CLUSTER_PASSWORD') ?: 'dummy_password';
+    }
+
+    protected static function getTlsStandaloneHost(): string
+    {
+        return getenv('VALKEY_TLS_STANDALONE_HOST') ?: 'localhost';
+    }
+
+    protected static function getTlsStandalonePort(): int
+    {
+        return (int)(getenv('VALKEY_TLS_STANDALONE_PORT') ?: 6400);
+    }
+
+    protected static function getReplica1Host(): string
+    {
+        return getenv('VALKEY_REPLICA1_HOST') ?: '127.0.0.1';
+    }
+
+    protected static function getReplica1Port(): int
+    {
+        return (int)(getenv('VALKEY_REPLICA1_PORT') ?: 6380);
+    }
+
+    protected static function getReplica2Host(): string
+    {
+        return getenv('VALKEY_REPLICA2_HOST') ?: '127.0.0.1';
+    }
+
+    protected static function getReplica2Port(): int
+    {
+        return (int)(getenv('VALKEY_REPLICA2_PORT') ?: 6381);
+    }
+
     public static function errorMessage(string $fmt, ...$args)
     {
         $msg = vsprintf($fmt . "\n", $args);
