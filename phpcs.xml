@@ -52,4 +52,8 @@
         <exclude-pattern>tests/*</exclude-pattern>
         <exclude-pattern>*.stub.php</exclude-pattern>
     </rule>
+    <rule ref="PSR2.Methods.MethodDeclaration.Underscore">
+        <exclude-pattern>tests/*</exclude-pattern>
+        <exclude-pattern>*.stub.php</exclude-pattern>
+    </rule>
 </ruleset>

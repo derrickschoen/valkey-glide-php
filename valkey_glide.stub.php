@@ -322,6 +322,186 @@ class ValkeyGlide
     public const OPT_REPLY_LITERAL = UNKNOWN;
 
     /**
+     * @var int
+     * @cvalue VALKEY_GLIDE_OPT_SERIALIZER
+     */
+    public const OPT_SERIALIZER = UNKNOWN;
+
+    /**
+     * @var int
+     * @cvalue VALKEY_GLIDE_OPT_PREFIX
+     */
+    public const OPT_PREFIX = UNKNOWN;
+
+    /**
+     * @var int
+     * @cvalue VALKEY_GLIDE_OPT_READ_TIMEOUT
+     */
+    public const OPT_READ_TIMEOUT = UNKNOWN;
+
+    /**
+     * @var int
+     * @cvalue VALKEY_GLIDE_OPT_SCAN
+     */
+    public const OPT_SCAN = UNKNOWN;
+
+    /**
+     * @var int
+     * @cvalue VALKEY_GLIDE_OPT_FAILOVER
+     */
+    public const OPT_FAILOVER = UNKNOWN;
+
+    /**
+     * @var int
+     * @cvalue VALKEY_GLIDE_OPT_TCP_KEEPALIVE
+     */
+    public const OPT_TCP_KEEPALIVE = UNKNOWN;
+
+    /**
+     * @var int
+     * @cvalue VALKEY_GLIDE_OPT_COMPRESSION
+     */
+    public const OPT_COMPRESSION = UNKNOWN;
+
+    /**
+     * @var int
+     * @cvalue VALKEY_GLIDE_OPT_COMPRESSION_LEVEL
+     */
+    public const OPT_COMPRESSION_LEVEL = UNKNOWN;
+
+    /**
+     * @var int
+     * @cvalue VALKEY_GLIDE_OPT_NULL_MBULK_AS_NULL
+     */
+    public const OPT_NULL_MULTIBULK_AS_NULL = UNKNOWN;
+
+    /**
+     * @var int
+     * @cvalue VALKEY_GLIDE_OPT_MAX_RETRIES
+     */
+    public const OPT_MAX_RETRIES = UNKNOWN;
+
+    /**
+     * @var int
+     * @cvalue VALKEY_GLIDE_OPT_BACKOFF_ALGORITHM
+     */
+    public const OPT_BACKOFF_ALGORITHM = UNKNOWN;
+
+    /**
+     * @var int
+     * @cvalue VALKEY_GLIDE_OPT_BACKOFF_BASE
+     */
+    public const OPT_BACKOFF_BASE = UNKNOWN;
+
+    /**
+     * @var int
+     * @cvalue VALKEY_GLIDE_OPT_BACKOFF_CAP
+     */
+    public const OPT_BACKOFF_CAP = UNKNOWN;
+
+    /**
+     * @var int
+     * @cvalue VALKEY_GLIDE_OPT_PACK_IGNORE_NUMBERS
+     */
+    public const OPT_PACK_IGNORE_NUMBERS = UNKNOWN;
+
+    /**
+     * @var int
+     * @cvalue VALKEY_GLIDE_SERIALIZER_NONE
+     */
+    public const SERIALIZER_NONE = UNKNOWN;
+
+    /**
+     * @var int
+     * @cvalue VALKEY_GLIDE_SERIALIZER_PHP
+     */
+    public const SERIALIZER_PHP = UNKNOWN;
+
+    /**
+     * @var int
+     * @cvalue VALKEY_GLIDE_SERIALIZER_IGBINARY
+     */
+    public const SERIALIZER_IGBINARY = UNKNOWN;
+
+    /**
+     * @var int
+     * @cvalue VALKEY_GLIDE_SERIALIZER_MSGPACK
+     */
+    public const SERIALIZER_MSGPACK = UNKNOWN;
+
+    /**
+     * @var int
+     * @cvalue VALKEY_GLIDE_SERIALIZER_JSON
+     */
+    public const SERIALIZER_JSON = UNKNOWN;
+
+    /**
+     * @var int
+     * @cvalue VALKEY_GLIDE_SCAN_NORETRY
+     */
+    public const SCAN_NORETRY = UNKNOWN;
+
+    /**
+     * @var int
+     * @cvalue VALKEY_GLIDE_SCAN_RETRY
+     */
+    public const SCAN_RETRY = UNKNOWN;
+
+    /**
+     * @var int
+     * @cvalue VALKEY_GLIDE_SCAN_PREFIX
+     */
+    public const SCAN_PREFIX = UNKNOWN;
+
+    /**
+     * @var int
+     * @cvalue VALKEY_GLIDE_SCAN_NOPREFIX
+     */
+    public const SCAN_NOPREFIX = UNKNOWN;
+
+    /**
+     * @var int
+     * @cvalue VALKEY_GLIDE_BACKOFF_ALGORITHM_DEFAULT
+     */
+    public const BACKOFF_ALGORITHM_DEFAULT = UNKNOWN;
+
+    /**
+     * @var int
+     * @cvalue VALKEY_GLIDE_BACKOFF_ALGORITHM_DECORRELATED_JITTER
+     */
+    public const BACKOFF_ALGORITHM_DECORRELATED_JITTER = UNKNOWN;
+
+    /**
+     * @var int
+     * @cvalue VALKEY_GLIDE_BACKOFF_ALGORITHM_FULL_JITTER
+     */
+    public const BACKOFF_ALGORITHM_FULL_JITTER = UNKNOWN;
+
+    /**
+     * @var int
+     * @cvalue VALKEY_GLIDE_BACKOFF_ALGORITHM_EQUAL_JITTER
+     */
+    public const BACKOFF_ALGORITHM_EQUAL_JITTER = UNKNOWN;
+
+    /**
+     * @var int
+     * @cvalue VALKEY_GLIDE_BACKOFF_ALGORITHM_EXPONENTIAL
+     */
+    public const BACKOFF_ALGORITHM_EXPONENTIAL = UNKNOWN;
+
+    /**
+     * @var int
+     * @cvalue VALKEY_GLIDE_BACKOFF_ALGORITHM_UNIFORM
+     */
+    public const BACKOFF_ALGORITHM_UNIFORM = UNKNOWN;
+
+    /**
+     * @var int
+     * @cvalue VALKEY_GLIDE_BACKOFF_ALGORITHM_CONSTANT
+     */
+    public const BACKOFF_ALGORITHM_CONSTANT = UNKNOWN;
+
+    /**
      * Create a new ValkeyGlide instance with the provided configuration.
      *
      * The constructor creates an unconnected client instance.
@@ -409,6 +589,14 @@ class ValkeyGlide
      * @return mixed The option value, or false if the option is not set or invalid
      */
     public function getOption(int $option): mixed;
+
+    /**
+     * Prefix a key with the currently set prefix (OPT_PREFIX).
+     *
+     * @param string $key The key to prefix
+     * @return string The prefixed key, or the original key if no prefix is set
+     */
+    public function _prefix(string $key): string|false;
 
     /**
      * Append data to a ValkeyGlide STRING key.
