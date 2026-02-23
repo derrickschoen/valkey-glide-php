@@ -512,6 +512,12 @@ void free_valkey_glide_object(zend_object* object) {
         valkey_glide->glide_client = NULL;
     }
 
+    if (valkey_glide->opt_prefix) {
+        efree(valkey_glide->opt_prefix);
+        valkey_glide->opt_prefix     = NULL;
+        valkey_glide->opt_prefix_len = 0;
+    }
+
     /* Clean up the standard object */
     zend_object_std_dtor(&valkey_glide->std);
 }

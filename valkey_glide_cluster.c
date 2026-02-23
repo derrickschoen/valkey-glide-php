@@ -1194,5 +1194,9 @@ SETOPTION_METHOD_IMPL(ValkeyGlideCluster)
 GETOPTION_METHOD_IMPL(ValkeyGlideCluster)
 /* }}} */
 
+/* {{{ proto string ValkeyGlideCluster::_prefix(string key) */
+PREFIX_METHOD_IMPL(ValkeyGlideCluster)
+/* }}} */
+
 #endif /* PHP_REDIS_CLUSTER_C */
 /* vim: set tabstop=4 softtabstop=4 expandtab shiftwidth=4: */

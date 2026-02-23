@@ -226,10 +226,46 @@ struct batch_command {
     enum RequestType     request_type;
 };
 
-/* Client runtime options - matching PHPRedis behavior */
+/* Client runtime options */
 typedef enum {
-    VALKEY_GLIDE_OPT_REPLY_LITERAL = 1 /* Return "OK" string instead of true for Ok responses */
+    VALKEY_GLIDE_OPT_REPLY_LITERAL       = 1, /* Upstream value - do not change */
+    VALKEY_GLIDE_OPT_SERIALIZER          = 16,
+    VALKEY_GLIDE_OPT_PREFIX              = 17,
+    VALKEY_GLIDE_OPT_READ_TIMEOUT        = 18,
+    VALKEY_GLIDE_OPT_SCAN                = 19,
+    VALKEY_GLIDE_OPT_FAILOVER            = 20,
+    VALKEY_GLIDE_OPT_TCP_KEEPALIVE       = 21,
+    VALKEY_GLIDE_OPT_COMPRESSION         = 22,
+    VALKEY_GLIDE_OPT_COMPRESSION_LEVEL   = 23,
+    VALKEY_GLIDE_OPT_NULL_MBULK_AS_NULL  = 24,
+    VALKEY_GLIDE_OPT_MAX_RETRIES         = 25,
+    VALKEY_GLIDE_OPT_BACKOFF_ALGORITHM   = 26,
+    VALKEY_GLIDE_OPT_BACKOFF_BASE        = 27,
+    VALKEY_GLIDE_OPT_BACKOFF_CAP         = 28,
+    VALKEY_GLIDE_OPT_PACK_IGNORE_NUMBERS = 29
 } valkey_glide_option_t;
+
+/* Serializer types - matching phpredis (enum redis_serializer values 0-4) */
+#define VALKEY_GLIDE_SERIALIZER_NONE 0
+#define VALKEY_GLIDE_SERIALIZER_PHP 1
+#define VALKEY_GLIDE_SERIALIZER_IGBINARY 2
+#define VALKEY_GLIDE_SERIALIZER_MSGPACK 3
+#define VALKEY_GLIDE_SERIALIZER_JSON 4
+
+/* SCAN retry options - matching phpredis */
+#define VALKEY_GLIDE_SCAN_NORETRY 0
+#define VALKEY_GLIDE_SCAN_RETRY 1
+#define VALKEY_GLIDE_SCAN_PREFIX 2
+#define VALKEY_GLIDE_SCAN_NOPREFIX 3
+
+/* Backoff algorithm types - matching phpredis */
+#define VALKEY_GLIDE_BACKOFF_ALGORITHM_DEFAULT 0
+#define VALKEY_GLIDE_BACKOFF_ALGORITHM_DECORRELATED_JITTER 1
+#define VALKEY_GLIDE_BACKOFF_ALGORITHM_FULL_JITTER 2
+#define VALKEY_GLIDE_BACKOFF_ALGORITHM_EQUAL_JITTER 3
+#define VALKEY_GLIDE_BACKOFF_ALGORITHM_EXPONENTIAL 4
+#define VALKEY_GLIDE_BACKOFF_ALGORITHM_UNIFORM 5
+#define VALKEY_GLIDE_BACKOFF_ALGORITHM_CONSTANT 6
 
 typedef struct {
     const void*           glide_client; /* Valkey Glide client pointer */
@@ -241,6 +277,12 @@ typedef struct {
 
     /* Runtime options (like PHPRedis OPT_* settings) */
     bool opt_reply_literal; /* OPT_REPLY_LITERAL: return "OK" string instead of true */
+
+    char*  opt_prefix;     /* OPT_PREFIX: key prefix string, NULL if not set */
+    size_t opt_prefix_len; /* Length of opt_prefix */
+
+    long opt_serializer; /* Stored value for OPT_SERIALIZER (no-op, default SERIALIZER_NONE) */
+    long opt_scan;       /* Stored value for OPT_SCAN (no-op, default SCAN_NORETRY) */
 
     zend_object std; /* MUST be last - PHP allocates extra memory after this */
 } valkey_glide_object;
