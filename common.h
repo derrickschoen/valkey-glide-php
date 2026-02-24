@@ -281,8 +281,8 @@ typedef struct {
     char*  opt_prefix;     /* OPT_PREFIX: key prefix string, NULL if not set */
     size_t opt_prefix_len; /* Length of opt_prefix */
 
-    long opt_serializer; /* Stored value for OPT_SERIALIZER (no-op, default SERIALIZER_NONE) */
-    long opt_scan;       /* Stored value for OPT_SCAN (no-op, default SCAN_NORETRY) */
+    zend_long opt_serializer; /* Stored value for OPT_SERIALIZER (no-op, default SERIALIZER_NONE) */
+    zend_long opt_scan;       /* Stored value for OPT_SCAN (no-op, default SCAN_NORETRY) */
 
     zend_object std; /* MUST be last - PHP allocates extra memory after this */
 } valkey_glide_object;

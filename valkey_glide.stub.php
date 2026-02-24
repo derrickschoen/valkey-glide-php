@@ -310,14 +310,12 @@ class ValkeyGlide
     }
 
     /**
-     * Create a new ValkeyGlide instance.
-     * Runtime option: Return "OK" string instead of true for OK responses
+     * Runtime option: Return "OK" string instead of true for OK responses.
      * When enabled, commands that return "+OK" from Valkey will return the string "OK"
      * instead of boolean true (the default behavior).
      *
      * @var int
      * @cvalue VALKEY_GLIDE_OPT_REPLY_LITERAL
-     *
      */
     public const OPT_REPLY_LITERAL = UNKNOWN;
 
