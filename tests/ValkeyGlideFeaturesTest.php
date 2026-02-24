@@ -1299,23 +1299,46 @@ class ValkeyGlideFeaturesTest extends ValkeyGlideBaseTest
 
     public function testSetOptionGetOption()
     {
-        $this->assertFalse($this->valkey_glide->getOption(ValkeyGlide::OPT_REPLY_LITERAL));
+        // PHPRedis returns 0/1 (long), not true/false (bool) for getOption
+        $this->assertEquals(0, $this->valkey_glide->getOption(ValkeyGlide::OPT_REPLY_LITERAL));
 
         $this->assertTrue($this->valkey_glide->setOption(ValkeyGlide::OPT_REPLY_LITERAL, true));
-        $this->assertTrue($this->valkey_glide->getOption(ValkeyGlide::OPT_REPLY_LITERAL));
+        $this->assertEquals(1, $this->valkey_glide->getOption(ValkeyGlide::OPT_REPLY_LITERAL));
 
         $this->assertTrue($this->valkey_glide->setOption(ValkeyGlide::OPT_REPLY_LITERAL, false));
-        $this->assertFalse($this->valkey_glide->getOption(ValkeyGlide::OPT_REPLY_LITERAL));
+        $this->assertEquals(0, $this->valkey_glide->getOption(ValkeyGlide::OPT_REPLY_LITERAL));
     }
 
     public function testSetOptionInvalidOption()
     {
+        // PHPRedis emits E_WARNING for unknown options
+        $warning = null;
+        set_error_handler(function ($errno, $errstr) use (&$warning) {
+            $warning = $errstr;
+            return true;
+        }, E_WARNING);
+
         $this->assertFalse($this->valkey_glide->setOption(9999, true));
+
+        restore_error_handler();
+        $this->assertIsString($warning);
+        $this->assertStringContains('Unknown option', $warning);
     }
 
     public function testGetOptionInvalidOption()
     {
+        // PHPRedis emits E_WARNING for unknown options
+        $warning = null;
+        set_error_handler(function ($errno, $errstr) use (&$warning) {
+            $warning = $errstr;
+            return true;
+        }, E_WARNING);
+
         $this->assertFalse($this->valkey_glide->getOption(9999));
+
+        restore_error_handler();
+        $this->assertIsString($warning);
+        $this->assertStringContains('Unknown option', $warning);
     }
 
     public function testOptReplyLiteralWithSet()
