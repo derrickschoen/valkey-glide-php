@@ -1518,6 +1518,8 @@ void execute_script_command(zval* object, int argc, zval* return_value, zend_cla
                 valkey_glide->opt_reply_literal = zval_is_true(value);        \
                 RETURN_TRUE;                                                  \
             default:                                                          \
+                php_error_docref(NULL, E_WARNING,                             \
+                    "Unknown option '" ZEND_LONG_FMT "'", option);            \
                 RETURN_FALSE;                                                 \
         }                                                                     \
     }
@@ -1538,8 +1540,10 @@ void execute_script_command(zval* object, int argc, zval* return_value, zend_cla
                                                                               \
         switch (option) {                                                     \
             case VALKEY_GLIDE_OPT_REPLY_LITERAL:                              \
-                RETURN_BOOL(valkey_glide->opt_reply_literal);                 \
+                RETURN_LONG(valkey_glide->opt_reply_literal);                 \
             default:                                                          \
+                php_error_docref(NULL, E_WARNING,                             \
+                    "Unknown option '" ZEND_LONG_FMT "'", option);            \
                 RETURN_FALSE;                                                 \
         }                                                                     \
     }
