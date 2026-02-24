@@ -1965,7 +1965,7 @@ class ValkeyGlideFeaturesTest extends ValkeyGlideBaseTest
     public function testOptReplyLiteralConstant()
     {
         $this->assertTrue(defined('ValkeyGlide::OPT_REPLY_LITERAL'));
-        $this->assertEquals(1, ValkeyGlide::OPT_REPLY_LITERAL);
+        $this->assertEquals(8, ValkeyGlide::OPT_REPLY_LITERAL);
     }
 
     public function testSetOptionGetOption()
@@ -2067,6 +2067,178 @@ class ValkeyGlideFeaturesTest extends ValkeyGlideBaseTest
             $this->valkey_glide->setOption(ValkeyGlide::OPT_REPLY_LITERAL, true);
 
             $result = $this->valkey_glide->setex($key, 100, 'value2');
+            $this->assertEquals('OK', $result);
+        } finally {
+            $this->valkey_glide->setOption(ValkeyGlide::OPT_REPLY_LITERAL, false);
+            $this->valkey_glide->del($key);
+        }
+    }
+
+    public function testPhpRedisOPTConstants()
+    {
+        $this->assertEquals(1, ValkeyGlide::OPT_SERIALIZER);
+        $this->assertEquals(2, ValkeyGlide::OPT_PREFIX);
+        $this->assertEquals(3, ValkeyGlide::OPT_READ_TIMEOUT);
+        $this->assertEquals(4, ValkeyGlide::OPT_SCAN);
+        $this->assertEquals(5, ValkeyGlide::OPT_FAILOVER);
+        $this->assertEquals(6, ValkeyGlide::OPT_TCP_KEEPALIVE);
+        $this->assertEquals(7, ValkeyGlide::OPT_COMPRESSION);
+        $this->assertEquals(8, ValkeyGlide::OPT_REPLY_LITERAL);
+        $this->assertEquals(9, ValkeyGlide::OPT_COMPRESSION_LEVEL);
+        $this->assertEquals(10, ValkeyGlide::OPT_NULL_MULTIBULK_AS_NULL);
+        $this->assertEquals(11, ValkeyGlide::OPT_MAX_RETRIES);
+        $this->assertEquals(12, ValkeyGlide::OPT_BACKOFF_ALGORITHM);
+        $this->assertEquals(13, ValkeyGlide::OPT_BACKOFF_BASE);
+        $this->assertEquals(14, ValkeyGlide::OPT_BACKOFF_CAP);
+        $this->assertEquals(15, ValkeyGlide::OPT_PACK_IGNORE_NUMBERS);
+    }
+
+    public function testSerializerConstants()
+    {
+        $this->assertEquals(0, ValkeyGlide::SERIALIZER_NONE);
+        $this->assertEquals(1, ValkeyGlide::SERIALIZER_PHP);
+        $this->assertEquals(2, ValkeyGlide::SERIALIZER_IGBINARY);
+        $this->assertEquals(3, ValkeyGlide::SERIALIZER_MSGPACK);
+        $this->assertEquals(4, ValkeyGlide::SERIALIZER_JSON);
+    }
+
+    public function testScanConstants()
+    {
+        $this->assertEquals(0, ValkeyGlide::SCAN_NORETRY);
+        $this->assertEquals(1, ValkeyGlide::SCAN_RETRY);
+        $this->assertEquals(2, ValkeyGlide::SCAN_PREFIX);
+        $this->assertEquals(3, ValkeyGlide::SCAN_NOPREFIX);
+    }
+
+    public function testBackoffAlgorithmConstants()
+    {
+        $this->assertEquals(0, ValkeyGlide::BACKOFF_ALGORITHM_DEFAULT);
+        $this->assertEquals(1, ValkeyGlide::BACKOFF_ALGORITHM_DECORRELATED_JITTER);
+        $this->assertEquals(2, ValkeyGlide::BACKOFF_ALGORITHM_FULL_JITTER);
+        $this->assertEquals(3, ValkeyGlide::BACKOFF_ALGORITHM_EQUAL_JITTER);
+        $this->assertEquals(4, ValkeyGlide::BACKOFF_ALGORITHM_EXPONENTIAL);
+        $this->assertEquals(5, ValkeyGlide::BACKOFF_ALGORITHM_UNIFORM);
+        $this->assertEquals(6, ValkeyGlide::BACKOFF_ALGORITHM_CONSTANT);
+    }
+
+    public function testOptPrefixSetGetOption()
+    {
+        // No prefix initially — PHPRedis returns NULL when no prefix is set
+        $this->assertNull($this->valkey_glide->getOption(ValkeyGlide::OPT_PREFIX));
+
+        // Set a prefix
+        $this->assertTrue($this->valkey_glide->setOption(ValkeyGlide::OPT_PREFIX, 'myapp:'));
+        $this->assertEquals('myapp:', $this->valkey_glide->getOption(ValkeyGlide::OPT_PREFIX));
+
+        // Change the prefix
+        $this->assertTrue($this->valkey_glide->setOption(ValkeyGlide::OPT_PREFIX, 'other:'));
+        $this->assertEquals('other:', $this->valkey_glide->getOption(ValkeyGlide::OPT_PREFIX));
+
+        // Clear the prefix — returns NULL again, matching PHPRedis
+        $this->assertTrue($this->valkey_glide->setOption(ValkeyGlide::OPT_PREFIX, ''));
+        $this->assertNull($this->valkey_glide->getOption(ValkeyGlide::OPT_PREFIX));
+    }
+
+    public function testPrefixMethod()
+    {
+        // Without prefix, _prefix returns the key as-is
+        $this->assertEquals('mykey', $this->valkey_glide->_prefix('mykey'));
+
+        // Set a prefix
+        $this->valkey_glide->setOption(ValkeyGlide::OPT_PREFIX, 'test:');
+
+        // _prefix should prepend the prefix
+        $this->assertEquals('test:mykey', $this->valkey_glide->_prefix('mykey'));
+
+        // Empty key returns just the prefix
+        $this->assertEquals('test:', $this->valkey_glide->_prefix(''));
+
+        // Clean up
+        $this->valkey_glide->setOption(ValkeyGlide::OPT_PREFIX, '');
+    }
+
+    public function testNoOpOptionsAccepted()
+    {
+        // setOption returns true for compatibility options
+        $this->assertTrue($this->valkey_glide->setOption(ValkeyGlide::OPT_SERIALIZER, 1));
+        $this->assertTrue($this->valkey_glide->setOption(ValkeyGlide::OPT_COMPRESSION, 1));
+
+        // OPT_SERIALIZER stores its value
+        $this->assertEquals(1, $this->valkey_glide->getOption(ValkeyGlide::OPT_SERIALIZER));
+
+        // OPT_SCAN stores its value when set explicitly
+        $this->assertEquals(0, $this->valkey_glide->getOption(ValkeyGlide::OPT_SCAN));
+        $this->assertTrue($this->valkey_glide->setOption(ValkeyGlide::OPT_SCAN, 1));
+        $this->assertEquals(1, $this->valkey_glide->getOption(ValkeyGlide::OPT_SCAN));
+
+        // OPT_COMPRESSION is a true no-op: setOption returns true but getOption returns 0
+        $this->assertEquals(0, $this->valkey_glide->getOption(ValkeyGlide::OPT_COMPRESSION));
+
+        // Reset state
+        $this->valkey_glide->setOption(ValkeyGlide::OPT_SERIALIZER, 0);
+        $this->valkey_glide->setOption(ValkeyGlide::OPT_SCAN, 0);
+    }
+
+    public function testUnknownOptionReturnsFalse()
+    {
+        $warning = null;
+        set_error_handler(function ($errno, $errstr) use (&$warning) {
+            $warning = $errstr;
+            return true;
+        }, E_WARNING);
+        try {
+            $this->assertFalse($this->valkey_glide->setOption(999, 'value'));
+        } finally {
+            restore_error_handler();
+        }
+        $this->assertIsString($warning);
+        $this->assertStringContains('Unknown option', $warning);
+
+        $warning = null;
+        set_error_handler(function ($errno, $errstr) use (&$warning) {
+            $warning = $errstr;
+            return true;
+        }, E_WARNING);
+        try {
+            $this->assertFalse($this->valkey_glide->getOption(999));
+        } finally {
+            restore_error_handler();
+        }
+        $this->assertIsString($warning);
+        $this->assertStringContains('Unknown option', $warning);
+    }
+
+    public function testOptPrefixIsolatedPerInstance()
+    {
+        // Set prefix on main instance
+        $this->valkey_glide->setOption(ValkeyGlide::OPT_PREFIX, 'inst1:');
+
+        // Create a second instance via a new ValkeyGlide object
+        $other = new ValkeyGlide();
+
+        // Second instance should have no prefix (NULL)
+        $this->assertNull($other->getOption(ValkeyGlide::OPT_PREFIX));
+        $this->assertEquals('mykey', $other->_prefix('mykey'));
+
+        // First instance still has its prefix
+        $this->assertEquals('inst1:', $this->valkey_glide->getOption(ValkeyGlide::OPT_PREFIX));
+        $this->assertEquals('inst1:mykey', $this->valkey_glide->_prefix('mykey'));
+
+        // Clean up
+        $this->valkey_glide->setOption(ValkeyGlide::OPT_PREFIX, '');
+    }
+
+    public function testOptReplyLiteralStillWorks()
+    {
+        $key = '{test}opt_reply_literal_new_value';
+        try {
+            // OPT_REPLY_LITERAL is 8 (matching PHPRedis) and should still work
+            $this->assertEquals(0, $this->valkey_glide->getOption(ValkeyGlide::OPT_REPLY_LITERAL));
+
+            $this->assertTrue($this->valkey_glide->setOption(ValkeyGlide::OPT_REPLY_LITERAL, true));
+            $this->assertEquals(1, $this->valkey_glide->getOption(ValkeyGlide::OPT_REPLY_LITERAL));
+
+            $result = $this->valkey_glide->set($key, 'value');
             $this->assertEquals('OK', $result);
         } finally {
             $this->valkey_glide->setOption(ValkeyGlide::OPT_REPLY_LITERAL, false);
