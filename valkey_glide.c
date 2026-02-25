@@ -111,9 +111,10 @@ zend_object* create_valkey_glide_object(zend_class_entry* ce) {
     memcpy(&valkey_glide_object_handlers,
            zend_get_std_object_handlers(),
            sizeof(valkey_glide_object_handlers));
-    valkey_glide_object_handlers.offset   = XtOffsetOf(valkey_glide_object, std);
-    valkey_glide_object_handlers.free_obj = free_valkey_glide_object;
-    valkey_glide->std.handlers            = &valkey_glide_object_handlers;
+    valkey_glide_object_handlers.offset    = XtOffsetOf(valkey_glide_object, std);
+    valkey_glide_object_handlers.free_obj  = free_valkey_glide_object;
+    valkey_glide_object_handlers.clone_obj = NULL;
+    valkey_glide->std.handlers             = &valkey_glide_object_handlers;
 
     return &valkey_glide->std;
 }
@@ -129,9 +130,10 @@ zend_object* create_valkey_glide_cluster_object(zend_class_entry* ce)  // TODO c
     memcpy(&valkey_glide_cluster_object_handlers,
            zend_get_std_object_handlers(),
            sizeof(valkey_glide_cluster_object_handlers));
-    valkey_glide_cluster_object_handlers.offset   = XtOffsetOf(valkey_glide_object, std);
-    valkey_glide_cluster_object_handlers.free_obj = free_valkey_glide_object;
-    valkey_glide->std.handlers                    = &valkey_glide_cluster_object_handlers;
+    valkey_glide_cluster_object_handlers.offset    = XtOffsetOf(valkey_glide_object, std);
+    valkey_glide_cluster_object_handlers.free_obj  = free_valkey_glide_object;
+    valkey_glide_cluster_object_handlers.clone_obj = NULL;
+    valkey_glide->std.handlers                     = &valkey_glide_cluster_object_handlers;
 
     return &valkey_glide->std;
 }
@@ -572,6 +574,12 @@ void free_valkey_glide_object(zend_object* object) {
     if (valkey_glide->glide_client) {
         close_glide_client(valkey_glide->glide_client);
         valkey_glide->glide_client = NULL;
+    }
+
+    if (valkey_glide->opt_prefix) {
+        efree(valkey_glide->opt_prefix);
+        valkey_glide->opt_prefix     = NULL;
+        valkey_glide->opt_prefix_len = 0;
     }
 
     /* Clean up the standard object */
