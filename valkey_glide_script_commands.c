@@ -394,6 +394,7 @@ void execute_invoke_script(
         VALKEY_GLIDE_PHP_ZVAL_GET_OBJECT(valkey_glide_object, object);
 
     if (!valkey_glide->glide_client) {
+        zend_throw_exception(get_valkey_glide_exception_ce(), "Client not connected", 0);
         RETURN_FALSE;
     }
 
