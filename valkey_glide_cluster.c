@@ -1132,6 +1132,10 @@ EVAL_RO_METHOD_IMPL(ValkeyGlideCluster)
 /* {{{ proto mixed ValkeyGlideCluster::evalsha_ro(string sha1, [array args], [int num_keys]) */
 EVALSHA_RO_METHOD_IMPL(ValkeyGlideCluster)
 /* }}} */
+
+/* {{{ proto mixed ValkeyGlideCluster::invokeScript(Script $script, array $keys = [], array $args =
+ * []) */
+INVOKESCRIPT_METHOD_IMPL(ValkeyGlideCluster)
 /* }}} */
 
 /* Function Commands */

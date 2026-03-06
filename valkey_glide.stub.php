@@ -4382,6 +4382,28 @@ class ValkeyGlide
      * $valkey_glide->zUnionStore('dst', ['zs1', 'zs2', 'zs3']);
      */
     public function zunionstore(string $dst, array $keys, ?array $weights = null, ?string $aggregate = null): ValkeyGlide|int|false;
+
+    /**
+     * Invoke a stored Lua script.
+     *
+     * This method executes a Lua script that was previously stored via the Script class.
+     * Unlike eval()/evalsha(), this uses the GLIDE core's invoke_script path and throws
+     * exceptions on errors instead of returning false.
+     *
+     * @param Script $script The script to invoke
+     * @param array $keys Keys to pass to the script (KEYS array)
+     * @param array $args Arguments to pass to the script (ARGV array)
+     * @return mixed The script return value
+     *
+     * @throws ValkeyGlideException If the script execution fails or if called in batch mode
+     *
+     * @example
+     * $script = new Script("return redis.call('get', KEYS[1])");
+     * $valkey_glide->set('mykey', 'hello');
+     * $result = $valkey_glide->invokeScript($script, ['mykey']);
+     * // $result === 'hello'
+     */
+    public function invokeScript(Script $script, array $keys = [], array $args = []): mixed;
 }
 
 class ValkeyGlideException extends RuntimeException

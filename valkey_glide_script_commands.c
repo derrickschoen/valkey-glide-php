@@ -3,6 +3,7 @@
 #include "include/glide_bindings.h"
 #include "valkey_glide_commands_common.h"
 #include "valkey_glide_core_common.h"
+#include "valkey_glide_script.h"
 
 // Helper macros for validating CommandResult in script commands
 #define VALIDATE_SCRIPT_RESULT_OR_RETURN_FALSE(result, return_value)       \
@@ -384,4 +385,76 @@ void execute_script_kill_command(zval* object, zval* return_value, bool is_clust
 
     command_response_to_zval(result->response, return_value, 0, false);
     free_command_result(result);
+}
+
+// Script invocation via invoke_script FFI
+void execute_invoke_script(
+    zval* object, zval* script_zval, zval* keys_array, zval* args_array, zval* return_value) {
+    valkey_glide_object* valkey_glide =
+        VALKEY_GLIDE_PHP_ZVAL_GET_OBJECT(valkey_glide_object, object);
+
+    if (!valkey_glide->glide_client) {
+        zend_throw_exception(get_valkey_glide_exception_ce(), "Client not connected", 0);
+        RETURN_FALSE;
+    }
+
+    /* invokeScript is not supported in batch mode */
+    if (valkey_glide->is_in_batch_mode) {
+        zend_throw_exception(
+            get_valkey_glide_exception_ce(), "invokeScript is not supported in batch mode", 0);
+        RETURN_FALSE;
+    }
+
+    /* Extract hash from Script object */
+    valkey_glide_script_object* script_obj = VALKEY_GLIDE_SCRIPT_ZVAL_GET_OBJECT(script_zval);
+    if (!script_obj->hash) {
+        zend_throw_exception(get_valkey_glide_exception_ce(), "Script hash is not available", 0);
+        RETURN_FALSE;
+    }
+
+    /* Prepare keys and args using existing prepare_ffi_args() */
+    uintptr_t*     keys_ptrs  = NULL;
+    unsigned long* keys_lens  = NULL;
+    unsigned long  keys_count = 0;
+
+    uintptr_t*     args_ptrs  = NULL;
+    unsigned long* args_lens  = NULL;
+    unsigned long  args_count = 0;
+
+    if (keys_array) {
+        prepare_ffi_args(keys_array, &keys_ptrs, &keys_lens, &keys_count);
+    }
+    if (args_array) {
+        prepare_ffi_args(args_array, &args_ptrs, &args_lens, &args_count);
+    }
+
+    /* Call invoke_script FFI */
+    CommandResult* result = invoke_script(valkey_glide->glide_client,
+                                          0, /* request_id */
+                                          script_obj->hash,
+                                          keys_count,
+                                          keys_ptrs,
+                                          keys_lens,
+                                          args_count,
+                                          args_ptrs,
+                                          args_lens,
+                                          NULL,
+                                          0 /* no route */);
+
+    /* Free FFI arg arrays */
+    if (keys_ptrs) {
+        efree(keys_ptrs);
+    }
+    if (keys_lens) {
+        efree(keys_lens);
+    }
+    if (args_ptrs) {
+        efree(args_ptrs);
+    }
+    if (args_lens) {
+        efree(args_lens);
+    }
+
+    /* Handle result using consistent error handling */
+    handle_command_result_or_throw(result, "invokeScript", return_value);
 }

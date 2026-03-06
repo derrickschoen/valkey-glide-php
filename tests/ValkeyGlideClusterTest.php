@@ -812,6 +812,42 @@ class ValkeyGlideClusterTest extends ValkeyGlideTest
         $this->assertEquals([$key, 'myarg'], $result);
     }
 
+    public function testInvokeScriptBasicCluster()
+    {
+        // Test Script class instantiation
+        $script = new Script('return 42');
+        $hash = $script->getHash();
+        $this->assertIsString($hash);
+
+        // Execute script returning a number
+        $result = $this->valkey_glide->invokeScript($script);
+        $this->assertEquals(42, $result);
+    }
+
+    public function testInvokeScriptWithKeysAndArgsCluster()
+    {
+        $key = '{invoke-cluster-test}-' . uniqid();
+
+        // Script that sets and gets a value
+        $setScript = new Script("redis.call('SET', KEYS[1], ARGV[1]); return redis.call('GET', KEYS[1])");
+        $result = $this->valkey_glide->invokeScript($setScript, [$key], ['cluster-hello']);
+        $this->assertEquals('cluster-hello', $result);
+
+        $this->assertEquals('cluster-hello', $this->valkey_glide->get($key));
+        $this->valkey_glide->del($key);
+    }
+
+    public function testInvokeScriptReturnTypesCluster()
+    {
+        // String return
+        $strScript = new Script("return 'hello'");
+        $this->assertEquals('hello', $this->valkey_glide->invokeScript($strScript));
+
+        // Array return
+        $arrScript = new Script("return {'a', 'b', 'c'}");
+        $this->assertEquals(['a', 'b', 'c'], $this->valkey_glide->invokeScript($arrScript));
+    }
+
     public function testEval()
     {
         if (version_compare($this->version, '2.5.0') < 0) {

@@ -5357,6 +5357,80 @@ class ValkeyGlideTest extends ValkeyGlideBaseTest
         $this->assertEquals(['mykey', 'myarg'], $result);
     }
 
+    public function testInvokeScriptBasic()
+    {
+        // Test Script class instantiation and hash consistency
+        $script = new Script('return 42');
+        $hash = $script->getHash();
+        $this->assertIsString($hash);
+        $this->assertNotEmpty($hash);
+
+        // Same code produces same hash
+        $script2 = new Script('return 42');
+        $this->assertEquals($hash, $script2->getHash());
+
+        // Different code produces different hash
+        $script3 = new Script('return 99');
+        $this->assertNotEquals($hash, $script3->getHash());
+
+        // Execute script returning a number
+        $result = $this->valkey_glide->invokeScript($script);
+        $this->assertEquals(42, $result);
+    }
+
+    public function testInvokeScriptWithKeysAndArgs()
+    {
+        $key = '{invoke-test}-' . uniqid();
+
+        // Script that sets a value and returns it
+        $setScript = new Script("redis.call('SET', KEYS[1], ARGV[1]); return redis.call('GET', KEYS[1])");
+        $result = $this->valkey_glide->invokeScript($setScript, [$key], ['hello-invoke']);
+        $this->assertEquals('hello-invoke', $result);
+
+        // Verify the key was actually set
+        $this->assertEquals('hello-invoke', $this->valkey_glide->get($key));
+
+        // Script with multiple keys and args
+        $multiScript = new Script('return {KEYS[1], KEYS[2], ARGV[1], ARGV[2]}');
+        $result = $this->valkey_glide->invokeScript($multiScript, ['k1', 'k2'], ['a1', 'a2']);
+        $this->assertEquals(['k1', 'k2', 'a1', 'a2'], $result);
+
+        $this->valkey_glide->del($key);
+    }
+
+    public function testInvokeScriptReturnTypes()
+    {
+        // String return
+        $strScript = new Script("return 'hello'");
+        $this->assertEquals('hello', $this->valkey_glide->invokeScript($strScript));
+
+        // Integer return
+        $intScript = new Script('return 123');
+        $this->assertEquals(123, $this->valkey_glide->invokeScript($intScript));
+
+        // Array return
+        $arrScript = new Script("return {'a', 'b', 'c'}");
+        $this->assertEquals(['a', 'b', 'c'], $this->valkey_glide->invokeScript($arrScript));
+
+        // Nil return
+        $nilScript = new Script('return nil');
+        $result = $this->valkey_glide->invokeScript($nilScript);
+        $this->assertTrue($result === null || $result === false);
+    }
+
+    public function testInvokeScriptEmptyKeysAndArgs()
+    {
+        $script = new Script('return "no-args"');
+
+        // Explicit empty arrays
+        $result = $this->valkey_glide->invokeScript($script, [], []);
+        $this->assertEquals('no-args', $result);
+
+        // Default parameters (no keys/args)
+        $result = $this->valkey_glide->invokeScript($script);
+        $this->assertEquals('no-args', $result);
+    }
+
     public function testEvalRo()
     {
         if (version_compare($this->version, '7.0.0') < 0) {
