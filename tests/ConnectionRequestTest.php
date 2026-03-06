@@ -729,6 +729,161 @@ class ConnectionRequestTest extends \TestSuite
         $this->assertFalse($compression_config->getEnabled());
     }
 
+    // ================================================================
+    // Pub/Sub Reconciliation Interval Tests
+    // ================================================================
+
+    public function testStandalonePubsubReconciliationInterval()
+    {
+        $request = ClientConstructorMock::simulate_standalone_constructor(
+            advanced_config: ['pubsub_reconciliation_interval_ms' => 5000]
+        );
+        $this->assertEquals(5000, $request->getPubsubReconciliationIntervalMs());
+    }
+
+    public function testClusterPubsubReconciliationInterval()
+    {
+        $request = ClientConstructorMock::simulate_cluster_constructor(
+            advanced_config: ['pubsub_reconciliation_interval_ms' => 5000]
+        );
+        $this->assertEquals(5000, $request->getPubsubReconciliationIntervalMs());
+    }
+
+    public function testStandalonePubsubReconciliationIntervalDefault()
+    {
+        $request = ClientConstructorMock::simulate_standalone_constructor();
+        $this->assertEquals(0, $request->getPubsubReconciliationIntervalMs());
+    }
+
+    public function testClusterPubsubReconciliationIntervalDefault()
+    {
+        $request = ClientConstructorMock::simulate_cluster_constructor();
+        $this->assertEquals(0, $request->getPubsubReconciliationIntervalMs());
+    }
+
+    public function testStandalonePubsubReconciliationIntervalZero()
+    {
+        $request = ClientConstructorMock::simulate_standalone_constructor(
+            advanced_config: ['pubsub_reconciliation_interval_ms' => 0]
+        );
+        $this->assertEquals(0, $request->getPubsubReconciliationIntervalMs());
+    }
+
+    public function testStandalonePubsubReconciliationIntervalNegative()
+    {
+        try {
+            ClientConstructorMock::simulate_standalone_constructor(
+                advanced_config: ['pubsub_reconciliation_interval_ms' => -1]
+            );
+            $this->assertTrue(false, 'Expected ValkeyGlideException was not thrown');
+        } catch (ValkeyGlideException $e) {
+            $this->assertStringContains('pubsub_reconciliation_interval_ms must be a non-negative integer', $e->getMessage());
+        }
+    }
+
+    public function testClusterPubsubReconciliationIntervalNegative()
+    {
+        try {
+            ClientConstructorMock::simulate_cluster_constructor(
+                advanced_config: ['pubsub_reconciliation_interval_ms' => -1]
+            );
+            $this->assertTrue(false, 'Expected ValkeyGlideException was not thrown');
+        } catch (ValkeyGlideException $e) {
+            $this->assertStringContains('pubsub_reconciliation_interval_ms must be a non-negative integer', $e->getMessage());
+        }
+    }
+
+    public function testStandalonePubsubReconciliationIntervalNonIntegerIgnored()
+    {
+        // String value should be silently ignored (returns default 0)
+        $request = ClientConstructorMock::simulate_standalone_constructor(
+            advanced_config: ['pubsub_reconciliation_interval_ms' => '5000']
+        );
+        $this->assertEquals(0, $request->getPubsubReconciliationIntervalMs());
+
+        // Float value should be silently ignored
+        $request = ClientConstructorMock::simulate_standalone_constructor(
+            advanced_config: ['pubsub_reconciliation_interval_ms' => 5000.0]
+        );
+        $this->assertEquals(0, $request->getPubsubReconciliationIntervalMs());
+
+        // Boolean value should be silently ignored
+        $request = ClientConstructorMock::simulate_standalone_constructor(
+            advanced_config: ['pubsub_reconciliation_interval_ms' => true]
+        );
+        $this->assertEquals(0, $request->getPubsubReconciliationIntervalMs());
+
+        // Null value should be silently ignored
+        $request = ClientConstructorMock::simulate_standalone_constructor(
+            advanced_config: ['pubsub_reconciliation_interval_ms' => null]
+        );
+        $this->assertEquals(0, $request->getPubsubReconciliationIntervalMs());
+    }
+
+    // ================================================================
+    // Subscribe/PSubscribe Signature Tests (Reflection)
+    // ================================================================
+
+    public function testSubscribeSignatureStandalone()
+    {
+        $method = new \ReflectionMethod(ValkeyGlide::class, 'subscribe');
+        $params = $method->getParameters();
+
+        $this->assertEquals(3, count($params));
+        $this->assertEquals('channels', $params[0]->getName());
+        $this->assertFalse($params[0]->isOptional());
+        $this->assertEquals('cb', $params[1]->getName());
+        $this->assertFalse($params[1]->isOptional());
+        $this->assertEquals('timeout_ms', $params[2]->getName());
+        $this->assertTrue($params[2]->isOptional());
+        $this->assertEquals(0, $params[2]->getDefaultValue());
+    }
+
+    public function testPsubscribeSignatureStandalone()
+    {
+        $method = new \ReflectionMethod(ValkeyGlide::class, 'psubscribe');
+        $params = $method->getParameters();
+
+        $this->assertEquals(3, count($params));
+        $this->assertEquals('patterns', $params[0]->getName());
+        $this->assertFalse($params[0]->isOptional());
+        $this->assertEquals('cb', $params[1]->getName());
+        $this->assertFalse($params[1]->isOptional());
+        $this->assertEquals('timeout_ms', $params[2]->getName());
+        $this->assertTrue($params[2]->isOptional());
+        $this->assertEquals(0, $params[2]->getDefaultValue());
+    }
+
+    public function testSubscribeSignatureCluster()
+    {
+        $method = new \ReflectionMethod(ValkeyGlideCluster::class, 'subscribe');
+        $params = $method->getParameters();
+
+        $this->assertEquals(3, count($params));
+        $this->assertEquals('channels', $params[0]->getName());
+        $this->assertFalse($params[0]->isOptional());
+        $this->assertEquals('cb', $params[1]->getName());
+        $this->assertFalse($params[1]->isOptional());
+        $this->assertEquals('timeout_ms', $params[2]->getName());
+        $this->assertTrue($params[2]->isOptional());
+        $this->assertEquals(0, $params[2]->getDefaultValue());
+    }
+
+    public function testPsubscribeSignatureCluster()
+    {
+        $method = new \ReflectionMethod(ValkeyGlideCluster::class, 'psubscribe');
+        $params = $method->getParameters();
+
+        $this->assertEquals(3, count($params));
+        $this->assertEquals('patterns', $params[0]->getName());
+        $this->assertFalse($params[0]->isOptional());
+        $this->assertEquals('callback', $params[1]->getName());
+        $this->assertFalse($params[1]->isOptional());
+        $this->assertEquals('timeout_ms', $params[2]->getName());
+        $this->assertTrue($params[2]->isOptional());
+        $this->assertEquals(0, $params[2]->getDefaultValue());
+    }
+
     // Helper methods
     // --------------
 

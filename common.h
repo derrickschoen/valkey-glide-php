@@ -102,6 +102,7 @@ typedef struct {
 #define VALKEY_GLIDE_EXPONENT_BASE "exponent_base"
 #define VALKEY_GLIDE_JITTER_PERCENT "jitter_percent"
 #define VALKEY_GLIDE_CONNECTION_TIMEOUT "connection_timeout"
+#define VALKEY_GLIDE_PUBSUB_RECONCILIATION_INTERVAL_MS "pubsub_reconciliation_interval_ms"
 
 #define VALKEY_GLIDE_DEFAULT_NUM_OF_RETRIES 5
 #define VALKEY_GLIDE_DEFAULT_FACTOR 100
@@ -156,6 +157,7 @@ typedef struct {
 typedef struct {
     valkey_glide_tls_advanced_configuration_t* tls_config;         /* NULL if not set */
     int                                        connection_timeout; /* In milliseconds. */
+    uint32_t pubsub_reconciliation_interval_ms;                    /* 0 means not set */
 } valkey_glide_advanced_base_client_configuration_t;
 
 typedef struct {

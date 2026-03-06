@@ -371,7 +371,7 @@ class ValkeyGlide
      * @param int|null $database_id Database number (0-15 for standalone)
      * @param string|null $client_name Client identifier for debugging
      * @param string|null $client_az Availability zone for routing
-     * @param array|null $advanced_config Advanced TLS/connection settings
+     * @param array|null $advanced_config Advanced settings: ['connection_timeout' => ms, 'tls_config' => [...], 'pubsub_reconciliation_interval_ms' => ms]
      * @param bool|null $lazy_connect Defer connection until first command (default: false)
      * @param resource|array|null $context Stream context resource or array for TLS configuration
      * @param array|null $compression Compression configuration: ['enabled' => true, 'backend' => COMPRESSION_BACKEND_ZSTD, 'compression_level' => 3, 'min_compression_size' => 64]
@@ -2255,18 +2255,22 @@ class ValkeyGlide
     /**
      * Subscribe to one or more glob-style patterns
      *
-     * @param array     $patterns One or more patterns to subscribe to.
-     * @param callable  $cb       A callback with the following prototype:
+     * @param array     $patterns   One or more patterns to subscribe to.
+     * @param callable  $cb         A callback with the following prototype:
      *
-     *                            <code>
-     *                            function ($valkey_glide, $channel, $message) { }
-     *                            </code>
+     *                              <code>
+     *                              function ($valkey_glide, $channel, $message) { }
+     *                              </code>
+     *
+     * @param int       $timeout_ms Timeout in milliseconds. 0 means no timeout (blocks indefinitely
+     *                              until unsubscribed). When set to a positive value, the subscribe
+     *                              loop will return after the specified duration.
      *
      * @see https://valkey.io/commands/psubscribe
      *
      * @return bool True if we were subscribed.
      */
-    public function psubscribe(array $patterns, callable $cb): bool;
+    public function psubscribe(array $patterns, callable $cb, int $timeout_ms = 0): bool;
 
     /**
      * Get a keys time to live in milliseconds.
@@ -3167,9 +3171,12 @@ class ValkeyGlide
     /**
      * Subscribe to one or more ValkeyGlide pubsub channels.
      *
-     * @param array    $channels One or more channel names.
-     * @param callable $cb       The callback PhpValkeyGlide will invoke when we receive a message
-     *                           from one of the subscribed channels.
+     * @param array    $channels   One or more channel names.
+     * @param callable $cb         The callback PhpValkeyGlide will invoke when we receive a message
+     *                             from one of the subscribed channels.
+     * @param int      $timeout_ms Timeout in milliseconds. 0 means no timeout (blocks indefinitely
+     *                             until unsubscribed). When set to a positive value, the subscribe
+     *                             loop will return after the specified duration.
      *
      * @return bool True on success, false on faiilure.  Note that this command will block the
      *              client in a subscribe loop, waiting for messages to arrive.
@@ -3193,7 +3200,7 @@ class ValkeyGlide
      * // broken and this command will execute.
      * echo "Subscribe loop ended\n";
      */
-    public function subscribe(array $channels, callable $cb): bool;
+    public function subscribe(array $channels, callable $cb, int $timeout_ms = 0): bool;
 
     /**
      * Unsubscribes the client from the given shard channels,
