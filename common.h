@@ -36,6 +36,29 @@
 #define VALKEY_GLIDE_HASH 5
 #define VALKEY_GLIDE_STREAM 6
 
+/* PHPRedis-compatible compression algorithm constants (for OPT_COMPRESSION).
+ * These use the _ALGO suffix to avoid collision with the VALKEY_GLIDE_COMPRESSION_BACKEND_*
+ * enum values (which are 0=ZSTD, 1=LZ4 for GLIDE's internal compression pipeline).
+ * The PHP constants use the shorter names (COMPRESSION_NONE, COMPRESSION_LZF, etc.) */
+#define VALKEY_GLIDE_COMPRESSION_ALGO_NONE 0
+#define VALKEY_GLIDE_COMPRESSION_ALGO_LZF 1
+#define VALKEY_GLIDE_COMPRESSION_ALGO_ZSTD 2
+#define VALKEY_GLIDE_COMPRESSION_ALGO_LZ4 3
+
+/* ZSTD compression level constants (hardcoded fallback values matching PHPRedis) */
+#define VALKEY_GLIDE_COMPRESSION_ZSTD_MIN 1
+#define VALKEY_GLIDE_COMPRESSION_ZSTD_MAX 22
+#define VALKEY_GLIDE_COMPRESSION_ZSTD_DEFAULT 3
+
+/* Failover strategy constants (matching PHPRedis RedisCluster) */
+#define VALKEY_GLIDE_FAILOVER_NONE 0
+#define VALKEY_GLIDE_FAILOVER_ERROR 1
+#define VALKEY_GLIDE_FAILOVER_DISTRIBUTE 2
+#define VALKEY_GLIDE_FAILOVER_DISTRIBUTE_SLAVES 3
+
+/* OPT_SLAVE_FAILOVER option constant (matching PHPRedis REDIS_OPT_FAILOVER) */
+#define VALKEY_GLIDE_OPT_FAILOVER 5
+
 /* Transaction modes */
 #define MULTI 0
 #define PIPELINE 1

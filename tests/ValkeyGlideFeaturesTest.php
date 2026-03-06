@@ -1962,6 +1962,40 @@ class ValkeyGlideFeaturesTest extends ValkeyGlideBaseTest
         $client->close();
     }
 
+    public function testRedisTypeConstants()
+    {
+        $this->assertEquals(0, ValkeyGlide::REDIS_NOT_FOUND);
+        $this->assertEquals(1, ValkeyGlide::REDIS_STRING);
+        $this->assertEquals(2, ValkeyGlide::REDIS_SET);
+        $this->assertEquals(3, ValkeyGlide::REDIS_LIST);
+        $this->assertEquals(4, ValkeyGlide::REDIS_ZSET);
+        $this->assertEquals(5, ValkeyGlide::REDIS_HASH);
+        $this->assertEquals(6, ValkeyGlide::REDIS_STREAM);
+        // Verify aliases match the VALKEY_GLIDE_* equivalents
+        $this->assertEquals(ValkeyGlide::VALKEY_GLIDE_NOT_FOUND, ValkeyGlide::REDIS_NOT_FOUND);
+        $this->assertEquals(ValkeyGlide::VALKEY_GLIDE_STRING, ValkeyGlide::REDIS_STRING);
+        $this->assertEquals(ValkeyGlide::VALKEY_GLIDE_SET, ValkeyGlide::REDIS_SET);
+        $this->assertEquals(ValkeyGlide::VALKEY_GLIDE_LIST, ValkeyGlide::REDIS_LIST);
+        $this->assertEquals(ValkeyGlide::VALKEY_GLIDE_ZSET, ValkeyGlide::REDIS_ZSET);
+        $this->assertEquals(ValkeyGlide::VALKEY_GLIDE_HASH, ValkeyGlide::REDIS_HASH);
+        $this->assertEquals(ValkeyGlide::VALKEY_GLIDE_STREAM, ValkeyGlide::REDIS_STREAM);
+    }
+
+    public function testCompressionAlgoConstants()
+    {
+        $this->assertEquals(0, ValkeyGlide::COMPRESSION_NONE);
+        $this->assertEquals(1, ValkeyGlide::COMPRESSION_LZF);
+        $this->assertEquals(2, ValkeyGlide::COMPRESSION_ZSTD);
+        $this->assertEquals(3, ValkeyGlide::COMPRESSION_LZ4);
+    }
+
+    public function testCompressionZstdLevelConstants()
+    {
+        $this->assertEquals(1, ValkeyGlide::COMPRESSION_ZSTD_MIN);
+        $this->assertEquals(22, ValkeyGlide::COMPRESSION_ZSTD_MAX);
+        $this->assertEquals(3, ValkeyGlide::COMPRESSION_ZSTD_DEFAULT);
+    }
+
     public function testOptReplyLiteralConstant()
     {
         $this->assertTrue(defined('ValkeyGlide::OPT_REPLY_LITERAL'));

@@ -1414,6 +1414,74 @@ class ValkeyGlideClusterFeaturesTest extends ValkeyGlideClusterBaseTest
         $client->close();
     }
 
+    public function testClusterValkeyGlideTypeConstants()
+    {
+        $this->assertEquals(0, ValkeyGlideCluster::VALKEY_GLIDE_NOT_FOUND);
+        $this->assertEquals(1, ValkeyGlideCluster::VALKEY_GLIDE_STRING);
+        $this->assertEquals(2, ValkeyGlideCluster::VALKEY_GLIDE_SET);
+        $this->assertEquals(3, ValkeyGlideCluster::VALKEY_GLIDE_LIST);
+        $this->assertEquals(4, ValkeyGlideCluster::VALKEY_GLIDE_ZSET);
+        $this->assertEquals(5, ValkeyGlideCluster::VALKEY_GLIDE_HASH);
+        $this->assertEquals(6, ValkeyGlideCluster::VALKEY_GLIDE_STREAM);
+    }
+
+    public function testClusterRedisTypeConstants()
+    {
+        $this->assertEquals(0, ValkeyGlideCluster::REDIS_NOT_FOUND);
+        $this->assertEquals(1, ValkeyGlideCluster::REDIS_STRING);
+        $this->assertEquals(2, ValkeyGlideCluster::REDIS_SET);
+        $this->assertEquals(3, ValkeyGlideCluster::REDIS_LIST);
+        $this->assertEquals(4, ValkeyGlideCluster::REDIS_ZSET);
+        $this->assertEquals(5, ValkeyGlideCluster::REDIS_HASH);
+        $this->assertEquals(6, ValkeyGlideCluster::REDIS_STREAM);
+        // Verify aliases match the VALKEY_GLIDE_* equivalents
+        $this->assertEquals(ValkeyGlideCluster::VALKEY_GLIDE_NOT_FOUND, ValkeyGlideCluster::REDIS_NOT_FOUND);
+        $this->assertEquals(ValkeyGlideCluster::VALKEY_GLIDE_STRING, ValkeyGlideCluster::REDIS_STRING);
+        $this->assertEquals(ValkeyGlideCluster::VALKEY_GLIDE_SET, ValkeyGlideCluster::REDIS_SET);
+        $this->assertEquals(ValkeyGlideCluster::VALKEY_GLIDE_LIST, ValkeyGlideCluster::REDIS_LIST);
+        $this->assertEquals(ValkeyGlideCluster::VALKEY_GLIDE_ZSET, ValkeyGlideCluster::REDIS_ZSET);
+        $this->assertEquals(ValkeyGlideCluster::VALKEY_GLIDE_HASH, ValkeyGlideCluster::REDIS_HASH);
+        $this->assertEquals(ValkeyGlideCluster::VALKEY_GLIDE_STREAM, ValkeyGlideCluster::REDIS_STREAM);
+    }
+
+    public function testClusterCompressionAlgoConstants()
+    {
+        $this->assertEquals(0, ValkeyGlideCluster::COMPRESSION_NONE);
+        $this->assertEquals(1, ValkeyGlideCluster::COMPRESSION_LZF);
+        $this->assertEquals(2, ValkeyGlideCluster::COMPRESSION_ZSTD);
+        $this->assertEquals(3, ValkeyGlideCluster::COMPRESSION_LZ4);
+    }
+
+    public function testClusterCompressionZstdLevelConstants()
+    {
+        $this->assertEquals(1, ValkeyGlideCluster::COMPRESSION_ZSTD_MIN);
+        $this->assertEquals(22, ValkeyGlideCluster::COMPRESSION_ZSTD_MAX);
+        $this->assertEquals(3, ValkeyGlideCluster::COMPRESSION_ZSTD_DEFAULT);
+    }
+
+    public function testClusterFailoverConstants()
+    {
+        $this->assertEquals(0, ValkeyGlideCluster::FAILOVER_NONE);
+        $this->assertEquals(1, ValkeyGlideCluster::FAILOVER_ERROR);
+        $this->assertEquals(2, ValkeyGlideCluster::FAILOVER_DISTRIBUTE);
+        $this->assertEquals(3, ValkeyGlideCluster::FAILOVER_DISTRIBUTE_SLAVES);
+    }
+
+    public function testClusterOptSlaveFailoverConstant()
+    {
+        $this->assertEquals(5, ValkeyGlideCluster::OPT_SLAVE_FAILOVER);
+    }
+
+    public function testFailoverConstantsNotOnStandalone()
+    {
+        $rc = new ReflectionClass('ValkeyGlide');
+        $this->assertFalse($rc->hasConstant('FAILOVER_NONE'));
+        $this->assertFalse($rc->hasConstant('FAILOVER_ERROR'));
+        $this->assertFalse($rc->hasConstant('FAILOVER_DISTRIBUTE'));
+        $this->assertFalse($rc->hasConstant('FAILOVER_DISTRIBUTE_SLAVES'));
+        $this->assertFalse($rc->hasConstant('OPT_SLAVE_FAILOVER'));
+    }
+
     public function testOptReplyLiteralConstant()
     {
         $this->assertTrue(defined('ValkeyGlideCluster::OPT_REPLY_LITERAL'));
