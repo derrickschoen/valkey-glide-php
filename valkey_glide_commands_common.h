@@ -28,8 +28,15 @@
 #include "include/glide/connection_request.pb-c.h"
 #include "include/glide_bindings.h"
 
+/* Forward declaration for Script class entry getter (defined in valkey_glide_script.h) */
+zend_class_entry* get_valkey_glide_script_ce(void);
+
 // Function declarations
 char* store_script_and_get_hash(const char* script);
+
+/* Script invocation */
+void execute_invoke_script(
+    zval* object, zval* script_zval, zval* keys_array, zval* args_array, zval* return_value);
 
 /* Forward declarations for types defined in glide_bindings.h */
 typedef struct CommandResponse    CommandResponse;
@@ -1236,6 +1243,20 @@ int execute_unlink_command(zval* object, int argc, zval* return_value, zend_clas
 #define SCRIPT_FLUSH_METHOD_IMPL(class_name)                          \
     PHP_METHOD(class_name, scriptFlush) {                             \
         execute_script_flush_command(getThis(), return_value, false); \
+    }
+
+#define INVOKESCRIPT_METHOD_IMPL(class_name)                                                 \
+    PHP_METHOD(class_name, invokeScript) {                                                   \
+        zval* script_zval;                                                                   \
+        zval* keys_array = NULL;                                                             \
+        zval* args_array = NULL;                                                             \
+        ZEND_PARSE_PARAMETERS_START(1, 3)                                                    \
+        Z_PARAM_OBJECT_OF_CLASS(script_zval, get_valkey_glide_script_ce())                   \
+        Z_PARAM_OPTIONAL                                                                     \
+        Z_PARAM_ARRAY(keys_array)                                                            \
+        Z_PARAM_ARRAY(args_array)                                                            \
+        ZEND_PARSE_PARAMETERS_END();                                                         \
+        execute_invoke_script(getThis(), script_zval, keys_array, args_array, return_value); \
     }
 
 #define DUMP_METHOD_IMPL(class_name)                                            \

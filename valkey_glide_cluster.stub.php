@@ -1472,4 +1472,18 @@ class ValkeyGlideCluster
      * @see ValkeyGlide::function
      */
     public function function(string $operation, mixed ...$args): mixed;
+
+    /**
+     * Invoke a stored Lua script.
+     *
+     * @param Script $script The script to invoke
+     * @param array $keys Keys to pass to the script (KEYS array)
+     * @param array $args Arguments to pass to the script (ARGV array)
+     * @return mixed The script return value
+     *
+     * @throws ValkeyGlideException If the script execution fails or if called in batch mode
+     *
+     * @see ValkeyGlide::invokeScript
+     */
+    public function invokeScript(Script $script, array $keys = [], array $args = []): mixed;
 }

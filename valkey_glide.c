@@ -17,6 +17,8 @@
 #include "valkey_glide_core_common.h"
 #include "valkey_glide_pubsub_common.h"
 #include "valkey_glide_pubsub_introspection.h"
+#include "valkey_glide_script.h"          // Include Script class
+#include "valkey_glide_script_arginfo.h"  // Include Script arginfo header
 
 // FFI function declarations
 extern struct CommandResult* command(const void*          client_adapter_ptr,
@@ -523,6 +525,9 @@ PHP_MINIT_FUNCTION(valkey_glide) {
 
     /* Register ClusterScanCursor class */
     register_cluster_scan_cursor_class();
+
+    /* Register Script class */
+    register_valkey_glide_script_class();
 
     /* Register mock constructor class used for testing only. */
     register_mock_constructor_class();
@@ -1153,6 +1158,10 @@ EVAL_RO_METHOD_IMPL(ValkeyGlide)
 
 /* {{{ proto mixed ValkeyGlide::evalsha_ro(string sha1, [array args], [int num_keys]) */
 EVALSHA_RO_METHOD_IMPL(ValkeyGlide)
+/* }}} */
+
+/* {{{ proto mixed ValkeyGlide::invokeScript(Script $script, array $keys = [], array $args = []) */
+INVOKESCRIPT_METHOD_IMPL(ValkeyGlide)
 /* }}} */
 
 /* Function commands */
