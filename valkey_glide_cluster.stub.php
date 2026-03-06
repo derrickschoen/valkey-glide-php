@@ -112,6 +112,126 @@ class ValkeyGlideCluster
     public const TIME_UNIT_TIMESTAMP_MILLISECONDS = "PXAT"; // Expire at timestamp (milliseconds)
 
     /**
+     * ValkeyGlide data type constants
+     */
+
+    /**
+     *
+     * @var int
+     * @cvalue VALKEY_GLIDE_NOT_FOUND
+     *
+     */
+    public const VALKEY_GLIDE_NOT_FOUND = UNKNOWN;
+
+    /**
+     *
+     * @var int
+     * @cvalue VALKEY_GLIDE_STRING
+     *
+     */
+    public const VALKEY_GLIDE_STRING = UNKNOWN;
+
+    /**
+     *
+     * @var int
+     * @cvalue VALKEY_GLIDE_SET
+     *
+     */
+    public const VALKEY_GLIDE_SET = UNKNOWN;
+
+    /**
+     *
+     * @var int
+     * @cvalue VALKEY_GLIDE_LIST
+     *
+     */
+    public const VALKEY_GLIDE_LIST = UNKNOWN;
+
+    /**
+     *
+     * @var int
+     * @cvalue VALKEY_GLIDE_ZSET
+     *
+     */
+    public const VALKEY_GLIDE_ZSET = UNKNOWN;
+
+    /**
+     *
+     * @var int
+     * @cvalue VALKEY_GLIDE_HASH
+     *
+     */
+    public const VALKEY_GLIDE_HASH = UNKNOWN;
+
+    /**
+     *
+     * @var int
+     * @cvalue VALKEY_GLIDE_STREAM
+     *
+     */
+    public const VALKEY_GLIDE_STREAM = UNKNOWN;
+
+    /**
+     * PHPRedis-compatible data type aliases
+     */
+
+    /**
+     *
+     * @var int
+     * @cvalue VALKEY_GLIDE_NOT_FOUND
+     *
+     */
+    public const REDIS_NOT_FOUND = UNKNOWN;
+
+    /**
+     *
+     * @var int
+     * @cvalue VALKEY_GLIDE_STRING
+     *
+     */
+    public const REDIS_STRING = UNKNOWN;
+
+    /**
+     *
+     * @var int
+     * @cvalue VALKEY_GLIDE_SET
+     *
+     */
+    public const REDIS_SET = UNKNOWN;
+
+    /**
+     *
+     * @var int
+     * @cvalue VALKEY_GLIDE_LIST
+     *
+     */
+    public const REDIS_LIST = UNKNOWN;
+
+    /**
+     *
+     * @var int
+     * @cvalue VALKEY_GLIDE_ZSET
+     *
+     */
+    public const REDIS_ZSET = UNKNOWN;
+
+    /**
+     *
+     * @var int
+     * @cvalue VALKEY_GLIDE_HASH
+     *
+     */
+    public const REDIS_HASH = UNKNOWN;
+
+    /**
+     *
+     * @var int
+     * @cvalue VALKEY_GLIDE_STREAM
+     *
+     */
+    public const REDIS_STREAM = UNKNOWN;
+
+    /**
      * IAM Authentication Constants
      */
 
@@ -166,6 +286,115 @@ class ValkeyGlideCluster
      * Use LZ4 compression backend (faster compression/decompression)
      */
     public const COMPRESSION_BACKEND_LZ4 = 1;
+
+    /**
+     * PHPRedis-compatible compression algorithm constants (for OPT_COMPRESSION)
+     */
+
+    /**
+     *
+     * @var int
+     * @cvalue VALKEY_GLIDE_COMPRESSION_ALGO_NONE
+     *
+     */
+    public const COMPRESSION_NONE = UNKNOWN;
+
+    /**
+     *
+     * @var int
+     * @cvalue VALKEY_GLIDE_COMPRESSION_ALGO_LZF
+     *
+     */
+    public const COMPRESSION_LZF = UNKNOWN;
+
+    /**
+     *
+     * @var int
+     * @cvalue VALKEY_GLIDE_COMPRESSION_ALGO_ZSTD
+     *
+     */
+    public const COMPRESSION_ZSTD = UNKNOWN;
+
+    /**
+     *
+     * @var int
+     * @cvalue VALKEY_GLIDE_COMPRESSION_ALGO_LZ4
+     *
+     */
+    public const COMPRESSION_LZ4 = UNKNOWN;
+
+    /**
+     * ZSTD compression level constants
+     */
+
+    /**
+     *
+     * @var int
+     * @cvalue VALKEY_GLIDE_COMPRESSION_ZSTD_MIN
+     *
+     */
+    public const COMPRESSION_ZSTD_MIN = UNKNOWN;
+
+    /**
+     *
+     * @var int
+     * @cvalue VALKEY_GLIDE_COMPRESSION_ZSTD_MAX
+     *
+     */
+    public const COMPRESSION_ZSTD_MAX = UNKNOWN;
+
+    /**
+     *
+     * @var int
+     * @cvalue VALKEY_GLIDE_COMPRESSION_ZSTD_DEFAULT
+     *
+     */
+    public const COMPRESSION_ZSTD_DEFAULT = UNKNOWN;
+
+    /**
+     * Failover strategy constants (cluster-only, matching PHPRedis RedisCluster)
+     */
+
+    /**
+     *
+     * @var int
+     * @cvalue VALKEY_GLIDE_FAILOVER_NONE
+     *
+     */
+    public const FAILOVER_NONE = UNKNOWN;
+
+    /**
+     *
+     * @var int
+     * @cvalue VALKEY_GLIDE_FAILOVER_ERROR
+     *
+     */
+    public const FAILOVER_ERROR = UNKNOWN;
+
+    /**
+     *
+     * @var int
+     * @cvalue VALKEY_GLIDE_FAILOVER_DISTRIBUTE
+     *
+     */
+    public const FAILOVER_DISTRIBUTE = UNKNOWN;
+
+    /**
+     *
+     * @var int
+     * @cvalue VALKEY_GLIDE_FAILOVER_DISTRIBUTE_SLAVES
+     *
+     */
+    public const FAILOVER_DISTRIBUTE_SLAVES = UNKNOWN;
+
+    /**
+     * PHPRedis-compatible alias for OPT_FAILOVER (cluster-only)
+     *
+     * @var int
+     * @cvalue VALKEY_GLIDE_OPT_FAILOVER
+     *
+     */
+    public const OPT_SLAVE_FAILOVER = UNKNOWN;
 
     /**
      * @var string

@@ -167,6 +167,66 @@ class ValkeyGlide
      */
     public const VALKEY_GLIDE_STREAM = UNKNOWN;
 
+    /**
+     * PHPRedis-compatible data type aliases
+     */
+
+    /**
+     *
+     * @var int
+     * @cvalue VALKEY_GLIDE_NOT_FOUND
+     *
+     */
+    public const REDIS_NOT_FOUND = UNKNOWN;
+
+    /**
+     *
+     * @var int
+     * @cvalue VALKEY_GLIDE_STRING
+     *
+     */
+    public const REDIS_STRING = UNKNOWN;
+
+    /**
+     *
+     * @var int
+     * @cvalue VALKEY_GLIDE_SET
+     *
+     */
+    public const REDIS_SET = UNKNOWN;
+
+    /**
+     *
+     * @var int
+     * @cvalue VALKEY_GLIDE_LIST
+     *
+     */
+    public const REDIS_LIST = UNKNOWN;
+
+    /**
+     *
+     * @var int
+     * @cvalue VALKEY_GLIDE_ZSET
+     *
+     */
+    public const REDIS_ZSET = UNKNOWN;
+
+    /**
+     *
+     * @var int
+     * @cvalue VALKEY_GLIDE_HASH
+     *
+     */
+    public const REDIS_HASH = UNKNOWN;
+
+    /**
+     *
+     * @var int
+     * @cvalue VALKEY_GLIDE_STREAM
+     *
+     */
+    public const REDIS_STREAM = UNKNOWN;
+
           /**
            *  @var int
            * Always get from primary, in order to get the freshest data.
@@ -262,6 +322,70 @@ class ValkeyGlide
      * Use LZ4 compression backend (faster compression/decompression)
      */
     public const COMPRESSION_BACKEND_LZ4 = 1;
+
+    /**
+     * PHPRedis-compatible compression algorithm constants (for OPT_COMPRESSION)
+     */
+
+    /**
+     *
+     * @var int
+     * @cvalue VALKEY_GLIDE_COMPRESSION_ALGO_NONE
+     *
+     */
+    public const COMPRESSION_NONE = UNKNOWN;
+
+    /**
+     *
+     * @var int
+     * @cvalue VALKEY_GLIDE_COMPRESSION_ALGO_LZF
+     *
+     */
+    public const COMPRESSION_LZF = UNKNOWN;
+
+    /**
+     *
+     * @var int
+     * @cvalue VALKEY_GLIDE_COMPRESSION_ALGO_ZSTD
+     *
+     */
+    public const COMPRESSION_ZSTD = UNKNOWN;
+
+    /**
+     *
+     * @var int
+     * @cvalue VALKEY_GLIDE_COMPRESSION_ALGO_LZ4
+     *
+     */
+    public const COMPRESSION_LZ4 = UNKNOWN;
+
+    /**
+     * ZSTD compression level constants
+     */
+
+    /**
+     *
+     * @var int
+     * @cvalue VALKEY_GLIDE_COMPRESSION_ZSTD_MIN
+     *
+     */
+    public const COMPRESSION_ZSTD_MIN = UNKNOWN;
+
+    /**
+     *
+     * @var int
+     * @cvalue VALKEY_GLIDE_COMPRESSION_ZSTD_MAX
+     *
+     */
+    public const COMPRESSION_ZSTD_MAX = UNKNOWN;
+
+    /**
+     *
+     * @var int
+     * @cvalue VALKEY_GLIDE_COMPRESSION_ZSTD_DEFAULT
+     *
+     */
+    public const COMPRESSION_ZSTD_DEFAULT = UNKNOWN;
 
     /**
      *
