@@ -93,8 +93,9 @@ class ClientConstructorMock
      * @param string|null $client_name           Client name identifier.
      * @param string|null $client_az             Client availability zone.
      * @param array|null $advanced_config        Advanced configuration ['connection_timeout' => 5000,
-     *                                           'tls_config' => ['use_insecure_tls' => false]].
-     *                                           connection_timeout is in milliseconds.
+     *                                           'tls_config' => ['use_insecure_tls' => false],
+     *                                           'pubsub_reconciliation_interval_ms' => 5000].
+     *                                           connection_timeout and pubsub_reconciliation_interval_ms are in milliseconds.
      * @param bool|null $lazy_connect            Whether to use lazy connection.
      * @param resource|null $context             Stream context for the connection.
      * @param array|null $compression            Compression configuration ['enabled' => true, 'backend' => ValkeyGlide::COMPRESSION_BACKEND_ZSTD,
@@ -130,8 +131,9 @@ class ClientConstructorMock
      * @param int|null $periodic_checks               Periodic checks configuration.
      * @param string|null $client_az                  Client availability zone.
      * @param array|null $advanced_config             Advanced configuration ['connection_timeout' => 5000,
-     *                                                'tls_config' => ['use_insecure_tls' => false]].
-     *                                                connection_timeout is in milliseconds.
+     *                                                'tls_config' => ['use_insecure_tls' => false],
+     *                                                'pubsub_reconciliation_interval_ms' => 5000].
+     *                                                connection_timeout and pubsub_reconciliation_interval_ms are in milliseconds.
      * @param bool|null $lazy_connect                 Whether to use lazy connection.
      * @param int|null $database_id                   Index of the logical database to connect to. Must be non-negative
      *                                                and within the range supported by the server configuration.

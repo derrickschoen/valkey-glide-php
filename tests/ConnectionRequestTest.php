@@ -793,6 +793,29 @@ class ConnectionRequestTest extends \TestSuite
         }
     }
 
+    public function testClusterPubsubReconciliationIntervalZero()
+    {
+        $request = ClientConstructorMock::simulate_cluster_constructor(
+            advanced_config: ['pubsub_reconciliation_interval_ms' => 0]
+        );
+        $this->assertEquals(0, $request->getPubsubReconciliationIntervalMs());
+    }
+
+    public function testClusterPubsubReconciliationIntervalNonIntegerIgnored()
+    {
+        // String value should be silently ignored (returns default 0)
+        $request = ClientConstructorMock::simulate_cluster_constructor(
+            advanced_config: ['pubsub_reconciliation_interval_ms' => '5000']
+        );
+        $this->assertEquals(0, $request->getPubsubReconciliationIntervalMs());
+
+        // Float value should be silently ignored
+        $request = ClientConstructorMock::simulate_cluster_constructor(
+            advanced_config: ['pubsub_reconciliation_interval_ms' => 5000.0]
+        );
+        $this->assertEquals(0, $request->getPubsubReconciliationIntervalMs());
+    }
+
     public function testStandalonePubsubReconciliationIntervalNonIntegerIgnored()
     {
         // String value should be silently ignored (returns default 0)

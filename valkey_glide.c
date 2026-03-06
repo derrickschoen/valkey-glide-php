@@ -1644,10 +1644,23 @@ static valkey_glide_advanced_base_client_configuration_t* _build_advanced_config
     advanced_config->connection_timeout = _determine_connection_timeout(params);
     advanced_config->pubsub_reconciliation_interval_ms =
         _determine_pubsub_reconciliation_interval(params);
+
+    /* Check for exception before allocating TLS config to avoid memory leak */
+    if (EG(exception)) {
+        efree(advanced_config);
+        return NULL;
+    }
+
     advanced_config->tls_config = _build_advanced_tls_config(params, is_cluster);
 
-    /* If config build failed (exception thrown), clean up and return NULL */
+    /* If TLS config build failed (exception thrown), clean up both */
     if (EG(exception)) {
+        if (advanced_config->tls_config) {
+            if (advanced_config->tls_config->root_certs) {
+                efree(advanced_config->tls_config->root_certs);
+            }
+            efree(advanced_config->tls_config);
+        }
         efree(advanced_config);
         return NULL;
     }
