@@ -3951,6 +3951,187 @@ class ValkeyGlideBatchTest extends ValkeyGlideBaseTest
     }
 
     // ===================================================================
+    // SCRIPT (EVAL/EVALSHA) BATCH TESTS
+    // ===================================================================
+
+    public function testEvalInMultiBatch()
+    {
+        $key = '{prefix}batch_eval_' . uniqid();
+        $this->valkey_glide->set($key, 'hello');
+
+        $results = $this->valkey_glide->multi()
+            ->eval("return redis.call('GET', KEYS[1])", [$key], 1)
+            ->eval("return 42", [$key], 1)
+            ->eval("return {KEYS[1], ARGV[1]}", [$key, 'world'], 1)
+            ->exec();
+
+        $this->assertIsArray($results, 3);
+        $this->assertEquals('hello', $results[0]);
+        $this->assertEquals(42, $results[1]);
+        $this->assertIsArray($results[2]);
+
+        $this->valkey_glide->del($key);
+    }
+
+    public function testEvalInPipelineBatch()
+    {
+        $key = '{prefix}batch_eval_pipe_' . uniqid();
+        $this->valkey_glide->set($key, 'hello');
+
+        $results = $this->valkey_glide->multi(ValkeyGlide::PIPELINE)
+            ->eval("return redis.call('GET', KEYS[1])", [$key], 1)
+            ->eval("return 42", [$key], 1)
+            ->exec();
+
+        $this->assertIsArray($results, 2);
+        $this->assertEquals('hello', $results[0]);
+        $this->assertEquals(42, $results[1]);
+
+        $this->valkey_glide->del($key);
+    }
+
+    public function testEvalshaInMultiBatch()
+    {
+        $script = "return redis.call('GET', KEYS[1])";
+        $key = '{prefix}batch_evalsha_' . uniqid();
+        $this->valkey_glide->set($key, 'evalsha_value');
+        // Execute the script first to cache it on the server
+        $this->valkey_glide->eval($script, [$key], 1);
+        $sha1 = sha1($script);
+
+        $results = $this->valkey_glide->multi()
+            ->evalsha($sha1, [$key], 1)
+            ->exec();
+
+        $this->assertIsArray($results, 1);
+        $this->assertEquals('evalsha_value', $results[0]);
+
+        $this->valkey_glide->del($key);
+    }
+
+    public function testEvalRoInMultiBatch()
+    {
+        if (version_compare($this->version, '7.0.0') < 0) {
+            $this->markTestSkipped('EVAL_RO requires Valkey/Redis 7.0.0+');
+        }
+
+        $key = '{prefix}batch_eval_ro_' . uniqid();
+        $this->valkey_glide->set($key, 'readonly_value');
+
+        $results = $this->valkey_glide->multi()
+            ->eval_ro("return redis.call('GET', KEYS[1])", [$key], 1)
+            ->exec();
+
+        $this->assertIsArray($results, 1);
+        $this->assertEquals('readonly_value', $results[0]);
+
+        $this->valkey_glide->del($key);
+    }
+
+    public function testEvalshaRoInMultiBatch()
+    {
+        if (version_compare($this->version, '7.0.0') < 0) {
+            $this->markTestSkipped('EVALSHA_RO requires Valkey/Redis 7.0.0+');
+        }
+
+        $script = "return redis.call('GET', KEYS[1])";
+        $key = '{prefix}batch_evalsha_ro_' . uniqid();
+        $this->valkey_glide->set($key, 'evalsha_ro_value');
+        // Execute the script first to cache it on the server
+        $this->valkey_glide->eval($script, [$key], 1);
+        $sha1 = sha1($script);
+
+        $results = $this->valkey_glide->multi()
+            ->evalsha_ro($sha1, [$key], 1)
+            ->exec();
+
+        $this->assertIsArray($results, 1);
+        $this->assertEquals('evalsha_ro_value', $results[0]);
+
+        $this->valkey_glide->del($key);
+    }
+
+    public function testMixedEvalBatch()
+    {
+        $key = '{prefix}batch_eval_mixed_' . uniqid();
+
+        $results = $this->valkey_glide->multi()
+            ->set($key, 'initial')
+            ->eval("return redis.call('GET', KEYS[1])", [$key], 1)
+            ->get($key)
+            ->exec();
+
+        $this->assertIsArray($results, 3);
+        $this->assertTrue($results[0]);              // SET
+        $this->assertEquals('initial', $results[1]); // EVAL GET
+        $this->assertEquals('initial', $results[2]); // GET
+
+        $this->valkey_glide->del($key);
+    }
+
+    public function testEvalBatchDeferredExecution()
+    {
+        $key = '{prefix}batch_eval_deferred_' . uniqid();
+        $this->valkey_glide->set($key, 'original');
+
+        // Start MULTI and queue an EVAL that would change the value
+        $batch = $this->valkey_glide->multi()
+            ->eval("return redis.call('SET', KEYS[1], 'changed')", [$key], 1);
+
+        // The chaining proves buffering: ->eval() returns $this (an object),
+        // not the eval result. If eval ran immediately (the bug), $batch
+        // would be a scalar (true for SET's OK response).
+        $this->assertIsObject($batch);
+
+        $results = $batch->exec();
+        $this->assertIsArray($results, 1);
+        $this->assertTrue($results[0]); // SET returns OK -> true
+
+        // After exec, value should be changed
+        $this->assertEquals('changed', $this->valkey_glide->get($key));
+
+        $this->valkey_glide->del($key);
+    }
+
+    public function testEvalBatchDiscard()
+    {
+        $key = '{prefix}batch_eval_discard_' . uniqid();
+        $this->valkey_glide->set($key, 'before_discard');
+
+        // Queue EVAL in MULTI, then discard
+        $this->valkey_glide->multi()
+            ->eval("return redis.call('SET', KEYS[1], 'after_discard')", [$key], 1)
+            ->discard();
+
+        // Value should be unchanged
+        $this->assertEquals('before_discard', $this->valkey_glide->get($key));
+
+        $this->valkey_glide->del($key);
+    }
+
+    public function testEvalshaNoScriptInBatch()
+    {
+        $key = '{prefix}batch_evalsha_noscript_' . uniqid();
+        $this->valkey_glide->set($key, 'test');
+        $fakeSha = str_repeat('0', 40);
+
+        // NOSCRIPT error in MULTI: individual command fails, others succeed
+        $results = $this->valkey_glide->multi()
+            ->get($key)
+            ->evalsha($fakeSha, [$key], 1)
+            ->get($key)
+            ->exec();
+
+        // exec() returns an array; the NOSCRIPT entry is false, others succeed
+        $this->assertIsArray($results, 3);
+        $this->assertEquals('test', $results[0]); // GET succeeds
+        $this->assertFalse($results[1]);           // EVALSHA NOSCRIPT fails
+        $this->assertEquals('test', $results[2]); // GET succeeds
+
+        $this->valkey_glide->del($key);
+    }
+
+    // ===================================================================
     // CLOSING CLASS
     // ===================================================================
 }
