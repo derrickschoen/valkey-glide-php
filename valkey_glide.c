@@ -142,7 +142,9 @@ static HashTable* _get_stream_context_ssl_options_ht(
 static HashTable* _get_advanced_config_ht(valkey_glide_php_common_constructor_params_t* params);
 static HashTable* _get_advanced_tls_config_ht(valkey_glide_php_common_constructor_params_t* params);
 
-static int  _determine_connection_timeout(valkey_glide_php_common_constructor_params_t* params);
+static int      _determine_connection_timeout(valkey_glide_php_common_constructor_params_t* params);
+static uint32_t _determine_pubsub_reconciliation_interval(
+    valkey_glide_php_common_constructor_params_t* params);
 static bool _determine_use_insecure_tls(valkey_glide_php_common_constructor_params_t* params);
 static bool _determine_use_tls(valkey_glide_php_common_constructor_params_t* params);
 
@@ -1459,6 +1461,44 @@ static int _determine_connection_timeout(valkey_glide_php_common_constructor_par
 }
 
 /**
+ * Determines the pub/sub reconciliation interval from the given constructor parameters.
+ * The value is read from advanced_config['pubsub_reconciliation_interval_ms'].
+ *
+ * @param params Pointer to the common constructor parameters structure.
+ * @return       Reconciliation interval in milliseconds, or 0 if not set.
+ */
+static uint32_t _determine_pubsub_reconciliation_interval(
+    valkey_glide_php_common_constructor_params_t* params) {
+    HashTable* advanced_config_ht = _get_advanced_config_ht(params);
+    if (!advanced_config_ht) {
+        return 0;
+    }
+
+    zval* interval_val =
+        zend_hash_str_find(advanced_config_ht,
+                           VALKEY_GLIDE_PUBSUB_RECONCILIATION_INTERVAL_MS,
+                           sizeof(VALKEY_GLIDE_PUBSUB_RECONCILIATION_INTERVAL_MS) - 1);
+    if (!interval_val || Z_TYPE_P(interval_val) != IS_LONG) {
+        return 0;
+    }
+
+    zend_long val = Z_LVAL_P(interval_val);
+    if (val < 0) {
+        zend_throw_exception(get_valkey_glide_exception_ce(),
+                             "pubsub_reconciliation_interval_ms must be a non-negative integer",
+                             0);
+        return 0;
+    }
+
+    /* Clamp to uint32 range */
+    if (val > UINT32_MAX) {
+        val = UINT32_MAX;
+    }
+
+    return (uint32_t) val;
+}
+
+/**
  * Determines whether to use TLS from the given constructor parameters.
  *
  * @param params Pointer to the common constructor parameters structure.
@@ -1602,10 +1642,25 @@ static valkey_glide_advanced_base_client_configuration_t* _build_advanced_config
         ecalloc(1, sizeof(valkey_glide_advanced_base_client_configuration_t));
 
     advanced_config->connection_timeout = _determine_connection_timeout(params);
-    advanced_config->tls_config         = _build_advanced_tls_config(params, is_cluster);
+    advanced_config->pubsub_reconciliation_interval_ms =
+        _determine_pubsub_reconciliation_interval(params);
 
-    /* If TLS config build failed (exception thrown), clean up and return NULL */
+    /* Check for exception before allocating TLS config to avoid memory leak */
     if (EG(exception)) {
+        efree(advanced_config);
+        return NULL;
+    }
+
+    advanced_config->tls_config = _build_advanced_tls_config(params, is_cluster);
+
+    /* If TLS config build failed (exception thrown), clean up both */
+    if (EG(exception)) {
+        if (advanced_config->tls_config) {
+            if (advanced_config->tls_config->root_certs) {
+                efree(advanced_config->tls_config->root_certs);
+            }
+            efree(advanced_config->tls_config);
+        }
         efree(advanced_config);
         return NULL;
     }

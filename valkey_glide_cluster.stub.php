@@ -233,6 +233,7 @@ class ValkeyGlideCluster
      *                                          - 'tls_config' => ['use_insecure_tls' => false]
      *                                          - 'refresh_topology_from_initial_nodes' => false (default: false)
      *                                            When true, topology updates use only initial nodes instead of internal cluster view.
+     *                                          - 'pubsub_reconciliation_interval_ms' => 5000 (milliseconds, 0 or omit for default)
      *                                          - 'otel' => OpenTelemetryConfig::builder()
      *                                                        ->traces(TracesConfig::builder()
      *                                                          ->endpoint('grpc://localhost:4317')
@@ -908,7 +909,7 @@ class ValkeyGlideCluster
     /**
      * @see ValkeyGlide::psubscribe
      */
-    public function psubscribe(array $patterns, callable $callback): bool;
+    public function psubscribe(array $patterns, callable $callback, int $timeout_ms = 0): bool;
 
     /**
      * @see ValkeyGlide::pttl
@@ -1098,7 +1099,7 @@ class ValkeyGlideCluster
     /**
      * @see ValkeyGlide::subscribe
      */
-    public function subscribe(array $channels, callable $cb): bool;
+    public function subscribe(array $channels, callable $cb, int $timeout_ms = 0): bool;
 
     /**
      * @see ValkeyGlide::sunion()

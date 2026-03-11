@@ -128,6 +128,11 @@ uint8_t* create_connection_request(size_t*                                   len
 
     if (config->advanced_config) {
         conn_req.connection_timeout = config->advanced_config->connection_timeout;
+
+        if (config->advanced_config->pubsub_reconciliation_interval_ms > 0) {
+            conn_req.pubsub_reconciliation_interval_ms =
+                config->advanced_config->pubsub_reconciliation_interval_ms;
+        }
     }
 
     /* Set refresh topology from initial nodes for cluster mode */
