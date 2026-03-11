@@ -851,3 +851,7 @@ SETOPTION_METHOD_IMPL(ValkeyGlide)
 /* {{{ proto mixed ValkeyGlide::getOption(int option) */
 GETOPTION_METHOD_IMPL(ValkeyGlide)
 /* }}} */
+
+/* {{{ proto string ValkeyGlide::_prefix(string key) */
+PREFIX_METHOD_IMPL(ValkeyGlide)
+/* }}} */
