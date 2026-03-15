@@ -1,0 +1,328 @@
+name: Release Pre-Built Binaries
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Build and verify without publishing to release"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Stage 1 – Build libglide_ffi.a once per (OS, arch)
+  # ---------------------------------------------------------------------------
+  build-rust-ffi:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux-x86_64
+            os: ubuntu-24.04
+            rust-target: x86_64-unknown-linux-gnu
+          - platform: linux-aarch64
+            os: ubuntu-24.04-arm
+            rust-target: aarch64-unknown-linux-gnu
+          - platform: macos-aarch64
+            os: macos-15
+            rust-target: aarch64-apple-darwin
+
+    name: "FFI · ${{ matrix.platform }}"
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: ./.github/workflows/install-rust-and-protoc
+        with:
+          target: ${{ matrix.rust-target }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install cbindgen
+        run: |
+          if command -v cbindgen &>/dev/null; then echo "cached"; else cargo install cbindgen; fi
+
+      - name: Install system dependencies
+        run: |
+          if [[ "${{ runner.os }}" == "Linux" ]]; then
+            sudo apt-get update
+            sudo apt-get install -y protobuf-c-compiler libprotobuf-c-dev php-cli php-dev
+          elif [[ "${{ runner.os }}" == "macOS" ]]; then
+            brew install protobuf-c php
+          fi
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: valkey-glide/ffi
+          shared-key: "ffi-${{ matrix.platform }}"
+
+      - run: python3 utils/remove_optional_from_proto.py || true
+      - run: cd valkey-glide/ffi && cargo build --release
+
+      - name: Generate headers + protobuf + arginfo
+        run: |
+          mkdir -p include src include/glide
+          cd valkey-glide/ffi && cbindgen --output ../../include/glide_bindings.h && cd ../..
+          { echo '#ifndef GLIDE_BINDINGS_H'; echo '#define GLIDE_BINDINGS_H'; cat include/glide_bindings.h; echo '#endif'; } > include/tmp.h && mv include/tmp.h include/glide_bindings.h
+          for proto in valkey-glide/glide-core/src/protobuf/*.proto; do [ -f "$proto" ] && protoc-c --c_out=src --proto_path=valkey-glide/glide-core/src/protobuf "$proto"; done
+          cp src/*.pb-c.h include/glide/ 2>/dev/null || true
+          phpize
+          for stub in *.stub.php src/*.stub.php; do [ -f "$stub" ] && php -f "$(pwd)/build/gen_stub.php" "$stub"; done
+          phpize --clean 2>/dev/null || true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ffi-${{ matrix.platform }}
+          retention-days: 7
+          path: |
+            valkey-glide/ffi/target/release/libglide_ffi.a
+            include/glide_bindings.h
+            include/glide/*.pb-c.h
+            src/*.pb-c.c
+            src/*.pb-c.h
+            *_arginfo.h
+            src/*_arginfo.h
+
+  # ---------------------------------------------------------------------------
+  # Stage 2 – Compile PHP extension per (platform, php, thread-safety)
+  # ---------------------------------------------------------------------------
+  build-php-ext:
+    needs: build-rust-ffi
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - name: linux-x86_64
+            os: ubuntu-24.04
+            arch: x86_64
+            named_os: linux
+            libc: glibc
+          - name: linux-aarch64
+            os: ubuntu-24.04-arm
+            arch: arm64
+            named_os: linux
+            libc: glibc
+          - name: macos-aarch64
+            os: macos-15
+            arch: arm64
+            named_os: darwin
+            libc: bsdlibc
+        php: ["8.2", "8.3", "8.4", "8.5"]
+        ts: [nts, zts]
+
+    name: "PHP ${{ matrix.php }}-${{ matrix.ts }} · ${{ matrix.platform.name }}"
+    runs-on: ${{ matrix.platform.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: ffi-${{ matrix.platform.name }}
+
+      - name: Place pre-built artifacts and create stamp files
+        run: |
+          ls -la valkey-glide/ffi/target/release/libglide_ffi.a include/glide_bindings.h src/*.pb-c.c *_arginfo.h
+          touch -t 202001010000 ensure-submodules
+          touch -t 202001020000 valkey-glide/ffi/target/release/libglide_ffi.a
+          touch -t 202001030000 include/glide_bindings.h src/*.pb-c.c src/*.pb-c.h include/glide/*.pb-c.h
+          touch -t 202501010000 *_arginfo.h src/*_arginfo.h 2>/dev/null || true
+
+      - uses: shivammathur/setup-php@v2
+        env:
+          phpts: ${{ matrix.ts }}
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: none
+          tools: none
+
+      - name: Install build dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential autoconf automake libtool pkg-config libssl-dev protobuf-c-compiler libprotobuf-c-dev libprotobuf-c1
+
+      - name: Install build dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: brew install autoconf automake libtool pkg-config protobuf-c openssl
+
+      - name: Verify PHP thread safety matches target
+        run: |
+          ACTUAL_TS=$(php -r 'echo PHP_ZTS ? "zts" : "nts";')
+          echo "Target: ${{ matrix.ts }}, Actual: $ACTUAL_TS"
+          [[ "$ACTUAL_TS" == "${{ matrix.ts }}" ]] || { echo "::error::Thread safety mismatch"; exit 1; }
+
+      - name: Build extension
+        run: |
+          phpize
+          ./configure --enable-valkey-glide --disable-header-generation
+          make -j$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
+
+      - name: Verify extension loads
+        run: |
+          php -dextension=./modules/valkey_glide.so -m | grep valkey_glide
+          php -dextension=./modules/valkey_glide.so -r "var_dump(class_exists('ValkeyGlide'), class_exists('ValkeyGlideCluster'));"
+
+      - name: Smoke test — install Valkey and connect/ping
+        run: |
+          T0=$SECONDS
+          if [[ "${{ runner.os }}" == "Linux" ]]; then
+            sudo apt-get install -y valkey-server 2>/dev/null || {
+              curl -fsSL https://packages.valkey.io/gpg | sudo gpg --dearmor -o /usr/share/keyrings/valkey.gpg
+              echo "deb [signed-by=/usr/share/keyrings/valkey.gpg] https://packages.valkey.io/deb stable main" | sudo tee /etc/apt/sources.list.d/valkey.list
+              sudo apt-get update && sudo apt-get install -y valkey
+            }
+          elif [[ "${{ runner.os }}" == "macOS" ]]; then
+            brew install valkey
+          fi
+          echo "⏱ Valkey install: $(( SECONDS - T0 ))s"
+          T1=$SECONDS
+          valkey-server --daemonize yes --port 6399 --loglevel warning
+          sleep 1
+          echo "⏱ Valkey start: $(( SECONDS - T1 ))s"
+          T2=$SECONDS
+          php -dextension=./modules/valkey_glide.so -r '
+            $c = new ValkeyGlide();
+            if (!$c->connect("127.0.0.1", 6399)) { echo "FAIL: connect\n"; exit(1); }
+            $pong = $c->ping();
+            if ($pong !== true && $pong !== "PONG") { echo "FAIL: ping=" . var_export($pong, true) . "\n"; exit(1); }
+            $c->set("smoke_key", "smoke_val");
+            $v = $c->get("smoke_key");
+            if ($v !== "smoke_val") { echo "FAIL: get=" . var_export($v, true) . "\n"; exit(1); }
+            $c->del(["smoke_key"]);
+            $c->close();
+            echo "PASS: connect + ping + set/get + del\n";
+          '
+          echo "⏱ Connect/ping/set/get: $(( SECONDS - T2 ))s"
+          echo "⏱ Total smoke test: $(( SECONDS - T0 ))s"
+          valkey-cli -p 6399 shutdown nosave 2>/dev/null || true
+
+      - name: Determine version
+        id: version
+        run: |
+          if [[ "${{ github.event_name }}" == "release" ]]; then
+            VERSION="${{ github.event.release.tag_name }}"
+            VERSION="${VERSION#v}"
+          else
+            VERSION=$(sed -n 's/^#define VALKEY_GLIDE_PHP_VERSION "\(.*\)"/\1/p' common.h)
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Package ZIP
+        id: package
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          PHP_VERSION: ${{ matrix.php }}
+          ARCH: ${{ matrix.platform.arch }}
+          NAMED_OS: ${{ matrix.platform.named_os }}
+          LIBC: ${{ matrix.platform.libc }}
+          TS: ${{ matrix.ts }}
+        run: |
+          SUFFIX=""
+          [[ "$TS" == "zts" ]] && SUFFIX="-zts"
+          ZIP_NAME="php_valkey_glide-${VERSION}_php${PHP_VERSION}-${ARCH}-${NAMED_OS}-${LIBC}${SUFFIX}.zip"
+          echo "zip_name=$ZIP_NAME" >> "$GITHUB_OUTPUT"
+          cd modules && zip "../${ZIP_NAME}" valkey_glide.so && cd ..
+          echo "Created: $ZIP_NAME ($(du -h "$ZIP_NAME" | cut -f1))"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.package.outputs.zip_name }}
+          path: ${{ steps.package.outputs.zip_name }}
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # Stage 2b – Full integration test (PHP 8.5 NTS, Linux x86_64 only)
+  # ---------------------------------------------------------------------------
+  integration-test:
+    needs: build-php-ext
+    name: "Integration · linux-x86_64"
+    runs-on: ubuntu-24.04
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: "php_valkey_glide-*_php8.5-x86_64-linux-glibc.zip"
+          merge-multiple: true
+
+      - name: Extract extension
+        run: |
+          mkdir -p modules
+          unzip php_valkey_glide-*_php8.5-x86_64-linux-glibc.zip -d modules/
+          ls -la modules/valkey_glide.so
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.5"
+          tools: composer
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libprotobuf-c1 libssl-dev protobuf-compiler
+
+      - uses: ./.github/workflows/install-engine
+        with:
+          engine-version: "8.0"
+          target: x86_64-unknown-linux-gnu
+
+      - run: composer install --no-interaction --prefer-dist --optimize-autoloader --ignore-platform-reqs
+
+      - run: |
+          protoc --proto_path=./valkey-glide/glide-core/src/protobuf \
+            --php_out=./tests/ \
+            ./valkey-glide/glide-core/src/protobuf/connection_request.proto
+
+      - name: Start Valkey standalone + replicas
+        run: |
+          cd tests && ./start_valkey_with_replicas.sh && sleep 2
+          valkey-cli -p 6379 ping
+
+      - name: Start Valkey cluster
+        run: |
+          cd tests && ./create-valkey-cluster.sh && sleep 2
+          valkey-cli -p 7001 cluster info | head -3
+
+      - name: Run full test suite
+        run: php -n -d extension=$(pwd)/modules/valkey_glide.so tests/TestValkeyGlide.php
+
+  # ---------------------------------------------------------------------------
+  # Stage 3 – Attach all ZIPs to the GitHub Release
+  # ---------------------------------------------------------------------------
+  publish:
+    if: github.event_name == 'release'
+    needs: [build-php-ext, integration-test]
+    runs-on: ubuntu-24.04
+    name: "Publish to Release"
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          pattern: "php_valkey_glide-*.zip"
+          merge-multiple: true
+
+      - run: ls -lh dist/
+
+      - name: Upload to GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "${{ github.event.release.tag_name }}" \
+            dist/php_valkey_glide-*.zip \
+            --repo "${{ github.repository }}" \
+            --clobber
