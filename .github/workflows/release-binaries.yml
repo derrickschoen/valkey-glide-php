@@ -31,9 +31,6 @@ jobs:
           - platform: linux-aarch64
             os: ubuntu-24.04-arm
             rust-target: aarch64-unknown-linux-gnu
-          - platform: macos-aarch64
-            os: macos-15
-            rust-target: aarch64-apple-darwin
 
     name: "FFI · ${{ matrix.platform }}"
     runs-on: ${{ matrix.os }}
@@ -101,6 +98,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # Only the prebuilt targets shipped on the release: Linux glibc,
+        # x86_64 + arm64, NTS, PHP 8.3 / 8.4 / 8.5. (macOS, ZTS and 8.2 are
+        # intentionally excluded — a failure in any build-php-ext leg would
+        # skip integration-test and publish via `needs:`.)
         platform:
           - name: linux-x86_64
             os: ubuntu-24.04
@@ -112,13 +113,8 @@ jobs:
             arch: arm64
             named_os: linux
             libc: glibc
-          - name: macos-aarch64
-            os: macos-15
-            arch: arm64
-            named_os: darwin
-            libc: bsdlibc
-        php: ["8.2", "8.3", "8.4", "8.5"]
-        ts: [nts, zts]
+        php: ["8.3", "8.4", "8.5"]
+        ts: [nts]
 
     name: "PHP ${{ matrix.php }}-${{ matrix.ts }} · ${{ matrix.platform.name }}"
     runs-on: ${{ matrix.platform.os }}
@@ -311,7 +307,10 @@ jobs:
   # Stage 3 – Attach all ZIPs to the GitHub Release
   # ---------------------------------------------------------------------------
   publish:
-    if: github.event_name == 'release'
+    # Publish on a real release event, or on a manual dispatch with dry_run=false.
+    if: >-
+      github.event_name == 'release' ||
+      (github.event_name == 'workflow_dispatch' && inputs.dry_run == false)
     needs: [build-php-ext, integration-test]
     runs-on: ubuntu-24.04
     name: "Publish to Release"
@@ -323,13 +322,38 @@ jobs:
           pattern: "php_valkey_glide-*.zip"
           merge-multiple: true
 
-      - run: ls -lh dist/
+      - name: Select the clean release set (NTS · Linux · glibc · PHP 8.3/8.4/8.5)
+        id: select
+        run: |
+          mkdir -p publish
+          # Keep only the supported prebuilt targets and drop ZTS / macOS / 8.2
+          # builds so the release carries exactly the 6-target glibc set.
+          for php in 8.3 8.4 8.5; do
+            for arch in x86_64 arm64; do
+              src="dist/php_valkey_glide-*_php${php}-${arch}-linux-glibc.zip"
+              # shellcheck disable=SC2086
+              cp $src publish/ 2>/dev/null || { echo "::error::Missing target php${php}-${arch}"; exit 1; }
+            done
+          done
+          echo "=== Clean set to publish ==="
+          ls -lh publish/
+          count=$(ls publish/*.zip | wc -l)
+          [[ "$count" -eq 6 ]] || { echo "::error::Expected 6 assets, found $count"; exit 1; }
+
+      - name: Determine release tag
+        id: tag
+        run: |
+          if [[ "${{ github.event_name }}" == "release" ]]; then
+            echo "tag=${{ github.event.release.tag_name }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=v1.1.0" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Upload to GitHub Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload "${{ github.event.release.tag_name }}" \
-            dist/php_valkey_glide-*.zip \
+          gh release upload "${{ steps.tag.outputs.tag }}" \
+            publish/php_valkey_glide-*.zip \
             --repo "${{ github.repository }}" \
             --clobber
